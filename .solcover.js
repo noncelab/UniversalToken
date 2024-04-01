@@ -8,6 +8,6 @@ module.exports = {
   copyPackages: ["@openzeppelin/contracts"],
   mocha: {
     enableTimeouts: false,
-    before_timeout: 0
-  }
+    before_timeout: 0,
+  },
 };

@@ -1,27 +1,28 @@
-require('dotenv').config();
-require('babel-register');
-require('babel-polyfill');
+require("dotenv").config();
+require("babel-register");
+require("babel-polyfill");
 
-const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require("truffle-hdwallet-provider");
 
 const providerWithMnemonic = (mnemonic, rpcEndpoint) => () =>
   new HDWalletProvider(mnemonic, rpcEndpoint);
 
-const infuraProvider = network => providerWithMnemonic(
-  process.env.MNEMONIC || '',
-  `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`
-);
+const infuraProvider = (network) =>
+  providerWithMnemonic(
+    process.env.MNEMONIC || "",
+    `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`
+  );
 
 const ropstenProvider = process.env.SOLIDITY_COVERAGE
   ? undefined
-  : infuraProvider('ropsten');
+  : infuraProvider("ropsten");
 
 module.exports = {
   networks: {
     development: {
-      host: 'localhost',
+      host: "localhost",
       port: 7545,
-      network_id: '*', // eslint-disable-line camelcase
+      network_id: "*", // eslint-disable-line camelcase
       gasPrice: 0x01,
     },
     test: {
@@ -36,30 +37,34 @@ module.exports = {
       gasPrice: 5000000000,
     },
     coverage: {
-      host: 'localhost',
-      network_id: '*', // eslint-disable-line camelcase
+      host: "localhost",
+      network_id: "*", // eslint-disable-line camelcase
       port: 8555,
       gas: 0xfffffffffff,
       gasPrice: 0x01,
       disableConfirmationListener: true,
     },
     ganache: {
-      host: 'localhost',
+      host: "localhost",
       port: 7545,
-      network_id: '*', // eslint-disable-line camelcase
+      network_id: "*", // eslint-disable-line camelcase
     },
     dotEnvNetwork: {
       provider: providerWithMnemonic(
         process.env.MNEMONIC,
         process.env.RPC_ENDPOINT
       ),
-      network_id: parseInt(process.env.NETWORK_ID) || '*', // eslint-disable-line camelcase
+      network_id: parseInt(process.env.NETWORK_ID) || "*", // eslint-disable-line camelcase
     },
   },
-  plugins: ["solidity-coverage", "truffle-contract-size", "truffle-plugin-verify"],
+  plugins: [
+    "solidity-coverage",
+    "truffle-contract-size",
+    "truffle-plugin-verify",
+  ],
   compilers: {
     solc: {
-      version: '0.8.7',
+      version: "0.8.7",
       settings: {
         optimizer: {
           enabled: true, // Default: false
@@ -69,6 +74,6 @@ module.exports = {
     },
   },
   api_keys: {
-    etherscan: process.env.ETHERSCAN_API_KEY
+    etherscan: process.env.ETHERSCAN_API_KEY,
   },
 };
