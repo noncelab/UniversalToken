@@ -5,7 +5,7 @@
  */
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../token/ERC20/IERC20.sol";
 import "./HoldStatusCode.sol";
 
 struct ERC20HoldData {

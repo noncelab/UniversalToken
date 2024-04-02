@@ -5,13 +5,13 @@
  */
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../utils/math/SafeMath.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../token/ERC20/IERC20.sol";
 
 import "./ERC1820Client.sol";
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "../token/ERC721/extensions/IERC721Enumerable.sol";
 
 
 import "../interface/ERC1820Implementer.sol";

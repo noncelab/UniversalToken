@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../access/Ownable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "../token/ERC20/extensions/ERC20Burnable.sol";
+import "../token/ERC20/extensions/ERC20Pausable.sol";
 
 import "../interface/ERC1820Implementer.sol";
 import "../roles/MinterRole.sol";
