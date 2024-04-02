@@ -56,6 +56,13 @@ module.exports = {
       ),
       network_id: parseInt(process.env.NETWORK_ID) || "*", // eslint-disable-line camelcase
     },
+    besuProd: {
+      provider: providerWithMnemonic(
+        process.env.MNEMONIC,
+        "https://rpc.ssafy-blockchain.com"
+      ),
+      network_id: parseInt(31221) // eslint-disable-line camelcase
+    }
   },
   plugins: [
     "solidity-coverage",
