@@ -1,7 +1,7 @@
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 const BYTECODE = require("../../build/contracts/ERC1400.json").bytecode;
-require("dotenv").config({ path: "../../.env" });
+require("dotenv").config();
 
 // 에러 출력
 const errorConsole = () => {
@@ -89,8 +89,6 @@ const argumentCheck = () => {
   } else errorConsole();
 };
 
-console.log(process.env.PRIVATE_KEY);
-
 // 컨트랙트 코드 배포
 const deploy = async (name, symbol, granularity, controllers, partitions) => {
   const signer = web3.eth.accounts.privateKeyToAccount(
@@ -112,7 +110,7 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
   const deployedContract = await deployTx
     .send({
       from: signer.address,
-      gas: 5000000,
+      gas: await deployTx.estimateGas({ from: signer.address }),
     })
     .once("transactionHash", (txHash) => {
       console.log(txHash);

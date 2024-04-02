@@ -7,16 +7,6 @@ const HDWalletProvider = require("truffle-hdwallet-provider");
 const providerWithMnemonic = (mnemonic, rpcEndpoint) => () =>
   new HDWalletProvider(mnemonic, rpcEndpoint);
 
-const infuraProvider = (network) =>
-  providerWithMnemonic(
-    process.env.MNEMONIC || "",
-    `https://${network}.infura.io/v3/${process.env.INFURA_API_KEY}`
-  );
-
-const ropstenProvider = process.env.SOLIDITY_COVERAGE
-  ? undefined
-  : infuraProvider("ropsten");
-
 module.exports = {
   networks: {
     development: {
@@ -30,11 +20,6 @@ module.exports = {
       port: 7545,
       network_id: "*",
       gasPrice: 0x01,
-    },
-    ropsten: {
-      provider: ropstenProvider,
-      network_id: 3, // eslint-disable-line camelcase
-      gasPrice: 5000000000,
     },
     coverage: {
       host: "localhost",
@@ -79,8 +64,5 @@ module.exports = {
         },
       },
     },
-  },
-  api_keys: {
-    etherscan: process.env.ETHERSCAN_API_KEY,
   },
 };

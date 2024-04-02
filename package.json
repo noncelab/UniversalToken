@@ -1,27 +1,10 @@
 {
-  "name": "ERC-1400",
+  "name": "erc-1400",
   "version": "1.0.0",
   "scripts": {
-    "build:ERC1400": "sol-merger \"./contracts/ERC1400.sol\" ./artifacts",
-    "build:ERC1400HoldableCertificateNonceToken": "sol-merger \"./contracts/certificate/ERC1400HoldableCertificateNonceToken.sol\" ./artifacts",
-    "build:ERC1400HoldableCertificateSaltToken": "sol-merger \"./contracts/certificate/ERC1400HoldableCertificateSaltToken.sol\" ./artifacts",
-    "build:ERC1400TokensValidator": "sol-merger \"./contracts/extensions/tokenExtensions/ERC1400TokensValidator.sol\" ./artifacts",
-    "build": "yarn run clean && yarn run build:ERC1400 && yarn run build:ERC1400TokensValidator && yarn run build:ERC1400HoldableCertificateNonceToken && yarn run build:ERC1400HoldableCertificateSaltToken",
-    "clean": "rm -rf artifacts",
-    "coverage": "yarn truffle run coverage --network coverage",
-    "env": "node setup.js",
-    "lint": "eslint ./migrations ./test ",
-    "lint:fix": "eslint ./test ./migrations --fix",
-    "lint:sol": "solium --no-soliumignore -d .",
-    "lint:sol:fix": "solium --no-soliumignore -d . --fix",
-    "lint:all": "yarn run lint && yarn run lint:sol",
-    "lint:all:fix": "yarn run lint:fix && yarn run lint:sol:fix",
-    "console": "truffle console",
-    "remix": "python -mwebbrowser http://localhost:8080 && remix-ide",
-    "start:chain": "ganache-cli -p 7545",
-    "test": "yarn truffle test",
-    "generate-types": "typechain --target=ethers-v5 'build/contracts/*.json'",
-    "postinstall": "truffle compile && yarn generate-types"
+    "reinstall": "rm -rf node_modules && rm -rf types && rm -rf package-lock.json && npm install --force && typechain --target=ethers-v5 'build/contracts/*.json'",
+    "compile": "rm -rf build && truffle compile",
+    "deployBesu": "rm -rf build && truffle compile && truffle deploy --network besuProd"
   },
   "license": "Apache",
   "devDependencies": {
