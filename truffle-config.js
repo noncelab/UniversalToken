@@ -61,8 +61,8 @@ module.exports = {
         process.env.MNEMONIC,
         "https://rpc.ssafy-blockchain.com"
       ),
-      network_id: parseInt(31221) // eslint-disable-line camelcase
-    }
+      network_id: parseInt(31221), // eslint-disable-line camelcase
+    },
   },
   plugins: [
     "solidity-coverage",
@@ -71,7 +71,7 @@ module.exports = {
   ],
   compilers: {
     solc: {
-      version: "0.8.0",
+      version: "0.8.19",
       settings: {
         optimizer: {
           enabled: true, // Default: false

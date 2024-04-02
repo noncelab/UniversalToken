@@ -31,7 +31,9 @@ const errorConsole = () => {
   );
 };
 
-const web3 = new Web3("http://localhost:7545");
+const web3 = new Web3(
+  new Web3.providers.HttpProvider("https://rpc.ssafy-blockchain.com")
+);
 
 // 인자 사전 검증
 const argumentCheck = () => {
@@ -87,6 +89,8 @@ const argumentCheck = () => {
   } else errorConsole();
 };
 
+console.log(process.env.PRIVATE_KEY);
+
 // 컨트랙트 코드 배포
 const deploy = async (name, symbol, granularity, controllers, partitions) => {
   const signer = web3.eth.accounts.privateKeyToAccount(
@@ -108,7 +112,7 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
   const deployedContract = await deployTx
     .send({
       from: signer.address,
-      gas: await deployTx.estimateGas(),
+      gas: 5000000,
     })
     .once("transactionHash", (txHash) => {
       console.log(txHash);
