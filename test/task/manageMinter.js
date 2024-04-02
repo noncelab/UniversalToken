@@ -19,13 +19,13 @@ const errorConsole = () => {
     "[사용법] node ./test/task/manageMinter.js contractAddr requestorAddr manageFunction\n"
   );
   console.log(
-    "* contractAddr: 특정 ERC-1400 컨트랙트 주소\n* requestorAddr: 배포 요청자 주소\n* manageFunction: minter 관리 기능 코드\n"
+    "* contractAddr: 특정 ERC-1400 컨트랙트 주소\n* requestorAddr: 배포 요청자 주소\n* manageFunction: minter 관리 기능명 (isMinter, addMinter, removeMinter)\n"
   );
   console.log(
     "** 예시 1 (0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 컨트랙트에 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc 주소가 minter로 지정되어 있는지 확인)\n: node ./test/task/manageMinter.js 0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc isMinter\n"
   );
   console.log(
-    "** 예시 2 (0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 컨트랙트에 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc 주소를 minter로 추가)\n: node ./test/task/manageMinter.js 0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc addMinter\n"
+    "** 예시 2 (0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 컨트랙트에 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc 주소를 minter로 추가)\n: node ./test/task/manageMinter.js 0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc addMinter"
   );
   console.log(
     "##################################################################################################################################################"
@@ -43,9 +43,7 @@ const argumentCheck = () => {
     if (
       !web3.utils.isAddress(process.argv[2]) ||
       !web3.utils.isAddress(process.argv[3]) ||
-      !["isMinter", "addMinter", "removeMinter", "renounceMinter"].includes(
-        process.argv[4]
-      )
+      !["isMinter", "addMinter", "removeMinter"].includes(process.argv[4])
     ) {
       errorConsole();
       return;
@@ -82,9 +80,6 @@ const manageMinter = async (ca, eoa, code) => {
   } else if (code === "removeMinter") {
     // 특정 주소 minter 권한 제거
     deployTx = contract.methods.removeMinter(eoa);
-  } else if (code === "renounceMinter") {
-    // 현재 호출자 주소 minter 권한 제거
-    deployTx = contract.methods.renounceMinter();
   }
 
   // minter 관리 호출
