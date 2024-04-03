@@ -4,61 +4,74 @@ require("dotenv").config();
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
-// 에러 출력
-const errorConsole = () => {
+const handleError = () => {
   console.log(
-    "##################################################################################################################################################"
-  );
-  console.log(
-    "#                                                           올바르지 않은 인자가 있습니다.                                                       #"
-  );
-  console.log(
-    "##################################################################################################################################################"
-  );
-  console.log(
-    "[사용법] node ./test/task/manageMinter.js contractAddr requestorAddr manageFunction\n"
-  );
-  console.log(
-    "* contractAddr: 특정 ERC-1400 컨트랙트 주소\n* requestorAddr: 배포 요청자 주소\n* manageFunction: minter 관리 기능명 (isMinter, addMinter, removeMinter)\n"
-  );
-  console.log(
-    "** 예시 1 (0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 컨트랙트에 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc 주소가 minter로 지정되어 있는지 확인)\n: node ./test/task/manageMinter.js 0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc isMinter\n"
-  );
-  console.log(
-    "** 예시 2 (0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 컨트랙트에 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc 주소를 minter로 추가)\n: node ./test/task/manageMinter.js 0x01bBd9086b5EEe322F787bDBD29Dc51D9931552C 0x8448967beb39174b94a96dfa9eff5ffa3af2c4bc addMinter"
-  );
-  console.log(
-    "##################################################################################################################################################"
+    "유효하지 않은 인자 (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49 참고)"
   );
 };
 
-// 인자 사전 검증
-const argumentCheck = () => {
+// 인자 및 isMinter 사전 검증
+const argumentCheck = async () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
     process.argv.length > 4 &&
     process.argv.slice(2).every((arg) => arg && arg.length > 0)
   ) {
-    // CA 또는 EOA 주소 형식이 올바른지 / manageFunction 값이 아래 관리 코드 내에 포함되는지 확인
+    // CA 주소 형식이 올바른지 / manageFunction 값이 아래 관리 코드 내에 포함되는지 확인
     if (
       !web3.utils.isAddress(process.argv[2]) ||
-      !web3.utils.isAddress(process.argv[3]) ||
-      !["isMinter", "addMinter", "removeMinter"].includes(process.argv[4])
+      !["isMinter", "addMinter", "removeMinter"].includes(process.argv[3])
     ) {
-      errorConsole();
+      handleError();
       return;
     }
 
     let contractAddr = process.argv[2];
-    let requestorAddr = process.argv[3];
-    let manageFunction = process.argv[4];
+    let manageFunction = process.argv[3];
+    let targetMinterAddr;
 
-    manageMinter(contractAddr, requestorAddr, manageFunction);
-  } else errorConsole();
+    if (manageFunction === "isMinter" && web3.utils.isAddress(process.argv[4]))
+      targetMinterAddr = process.argv[4];
+    else {
+      // requestorAddr가 addMinter 또는 removeMinter를 요청한 경우 minter인지 확인
+      if (manageFunction === "addMinter" || manageFunction === "removeMinter") {
+        // requestorAddr와 targetMinterAddr가 주소 형식인지 확인
+        if (
+          !web3.utils.isAddress(process.argv[4]) ||
+          !web3.utils.isAddress(process.argv[5])
+        ) {
+          handleError();
+          return;
+        }
+
+        // requestorAddr가 isMinter인지 확인
+        const signer = web3.eth.accounts.privateKeyToAccount(
+          "0x" + process.env.PRIVATE_KEY
+        );
+
+        // 관리자(서명자) 정보 추가
+        web3.eth.accounts.wallet.add(signer);
+
+        const contract = new web3.eth.Contract(ABI, process.argv[2]);
+        const result = await contract.methods.isMinter(process.argv[4]).call();
+
+        if (result) targetMinterAddr = process.argv[5];
+        else {
+          console.log("Error: requestorAddr는 isMinter가 아닙니다");
+          return;
+        }
+      } else {
+        handleError();
+        return;
+      }
+    }
+
+    manageMinter(contractAddr, manageFunction, targetMinterAddr);
+  } else handleError();
 };
 
 // minter 관리
-const manageMinter = async (ca, eoa, code) => {
+const manageMinter = async (ca, code, eoa) => {
   const signer = web3.eth.accounts.privateKeyToAccount(
     "0x" + process.env.PRIVATE_KEY
   );

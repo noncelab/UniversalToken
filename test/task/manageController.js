@@ -6,7 +6,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
 const handleError = () => {
   console.log(
-    "유효하지 않은 인자 (https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d7cfe39dd6714705b45a4543f540a4ba 참고)"
+    "유효하지 않은 인자 (https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d5ed9a382c0047d6809d82d5fd404629 참고)"
   );
 };
 
@@ -65,12 +65,12 @@ const argumentCheck = () => {
       }
     }
 
-    manageOperator(contractAddr, manageFunction, params);
+    manageController(contractAddr, manageFunction, params);
   } else handleError();
 };
 
-// operator 관리
-const manageOperator = async (ca, code, params) => {
+// controller 관리
+const manageController = async (ca, code, params) => {
   const signer = web3.eth.accounts.privateKeyToAccount(
     "0x" + process.env.PRIVATE_KEY
   );
@@ -111,7 +111,7 @@ const manageOperator = async (ca, code, params) => {
   //   deployTx = contract.methods.revokeOperatorByPartition(params[0], params[1]);
   // }
 
-  // operator 관리 호출
+  // controller 관리 호출
   if (["isOperator", "isOperatorForPartition"].includes(code)) {
     // 단순 조회
     const result = await deployTx.call();
