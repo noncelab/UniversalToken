@@ -1,3 +1,10 @@
+/**
+ * DefaultPartition 관리를 위한 스크립트 파일
+ * @brief getDefaultPartitions, setDefaultPartitions 함수 호출로 컨트랙트 상호 작용 가능
+ * @command node ./test/task/defaultPartition.js contractAddr manageFunction [함수별 파라미터]
+ * @see 관련 문서: https://www.notion.so/noncelab/SC-setDefaultPartitions-59806abe66164d9eac22ebf8db244f96?pvs=4#9c3e2beb9ee745b4a231425cb553d5e1
+ */
+
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();

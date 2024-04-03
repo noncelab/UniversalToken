@@ -1,3 +1,10 @@
+/**
+ * Controller 관리를 위한 스크립트 파일
+ * @brief controllers, isControllable, setControllers, controllersByPartition, setPartitionControllers 함수 호출로 컨트랙트 상호 작용 가능
+ * @command node ./test/task/manageController.js contractAddr manageFunction [함수별 파라미터]
+ * @see 관련 문서: https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d5ed9a382c0047d6809d82d5fd404629
+ */
+
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();

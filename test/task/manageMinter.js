@@ -1,3 +1,10 @@
+/**
+ * Minter 관리를 위한 스크립트 파일
+ * @brief isMinter, addMinter, removeMinter 함수 호출로 컨트랙트 상호 작용 가능
+ * @command node ./test/task/manageMinter.js contractAddr manageFunction [함수별 파라미터]
+ * @see 관련 문서: https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49
+ */
+
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();

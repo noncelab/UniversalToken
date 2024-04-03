@@ -1,3 +1,10 @@
+/**
+ * Document 관리를 위한 스크립트 파일
+ * @brief getDocument, setDocument, removeDocument, getAllDocuments 함수 호출로 컨트랙트 상호 작용 가능
+ * @command node ./test/task/document.js contractAddr manageFunction [함수별 파라미터]
+ * @see 관련 문서: https://www.notion.so/noncelab/SC-document-abe51223989d4631b60c3b0a785f5413?pvs=4#b6b1d8822f114100bcb286df59e1ffc2
+ */
+
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();
