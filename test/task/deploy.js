@@ -18,7 +18,7 @@ const handleError = (number) => {
 const argumentCheck = () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
-    process.argv.length > 8 &&
+    process.argv.length > 9 &&
     process.argv.slice(2).every((arg) => arg && arg.length > 0)
   ) {
     let tokenName = process.argv[2];
@@ -26,32 +26,32 @@ const argumentCheck = () => {
 
     // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
     if (
-      isNaN(process.argv[4]) ||
-      Number(process.argv[4]) < 1 ||
       isNaN(process.argv[5]) ||
-      isNaN(process.argv[6])
+      Number(process.argv[5]) < 1 ||
+      isNaN(process.argv[6]) ||
+      isNaN(process.argv[7])
     ) {
       handleError(1);
       return;
     }
 
-    let tokenGranularity = Number(process.argv[4]);
-    let tokenControllersCnt = Number(process.argv[5]);
-    let tokenPartitionsCnt = Number(process.argv[6]);
+    let tokenGranularity = Number(process.argv[5]);
+    let tokenControllersCnt = Number(process.argv[6]);
+    let tokenPartitionsCnt = Number(process.argv[7]);
 
     let tokenControllers = [];
     let tokenPartitions = [];
 
     // tokenControllersCnt 수만큼 돌며 컨트롤러 배열 대입
-    for (let i = 7; i < tokenControllersCnt + 7; i++) {
+    for (let i = 8; i < tokenControllersCnt + 8; i++) {
       if (process.argv[i] !== "-" && web3.utils.isAddress(process.argv[i]))
         tokenControllers.push(web3.utils.toChecksumAddress(process.argv[i]));
     }
 
     // tokenPartitionCnt 수만큼 돌며 파티션 배열 대입
     for (
-      let i = 7 + tokenControllersCnt;
-      i < tokenControllersCnt + tokenPartitionsCnt + 7;
+      let i = 8 + tokenControllersCnt;
+      i < tokenControllersCnt + tokenPartitionsCnt + 8;
       i++
     ) {
       if (process.argv[i] !== "-")
