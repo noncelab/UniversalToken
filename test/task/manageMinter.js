@@ -4,9 +4,13 @@ require("dotenv").config();
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
-const handleError = () => {
+const signer = web3.eth.accounts.privateKeyToAccount(
+  "0x" + process.env.PRIVATE_KEY
+);
+
+const handleError = (number) => {
   console.log(
-    "유효하지 않은 인자 (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49 참고)"
+    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49 참고)`
   );
 };
 
@@ -22,7 +26,7 @@ const argumentCheck = async () => {
       !web3.utils.isAddress(process.argv[2]) ||
       !["isMinter", "addMinter", "removeMinter"].includes(process.argv[3])
     ) {
-      handleError();
+      handleError(1);
       return;
     }
 
@@ -31,7 +35,7 @@ const argumentCheck = async () => {
     let targetMinterAddr;
 
     if (manageFunction === "isMinter" && web3.utils.isAddress(process.argv[4]))
-      targetMinterAddr = process.argv[4];
+      targetMinterAddr = web3.utils.toChecksumAddress(process.argv[4]);
     else {
       // requestorAddr가 addMinter 또는 removeMinter를 요청한 경우 minter인지 확인
       if (manageFunction === "addMinter" || manageFunction === "removeMinter") {
@@ -40,42 +44,45 @@ const argumentCheck = async () => {
           !web3.utils.isAddress(process.argv[4]) ||
           !web3.utils.isAddress(process.argv[5])
         ) {
-          handleError();
+          handleError(2);
+          return;
+        }
+
+        // manageFunction이 removeMinter일 때 targetMinterAddr이 시스템 owner가 아닌지 확인
+        if (
+          manageFunction === "removeMinter" &&
+          web3.utils.toChecksumAddress(process.argv[4]) ===
+            web3.utils.toChecksumAddress(signer.address)
+        ) {
+          console.log("Error: 시스템 owner의 minter 권한을 제거할 수 없습니다");
           return;
         }
 
         // requestorAddr가 isMinter인지 확인
-        const signer = web3.eth.accounts.privateKeyToAccount(
-          "0x" + process.env.PRIVATE_KEY
-        );
-
         // 관리자(서명자) 정보 추가
         web3.eth.accounts.wallet.add(signer);
 
         const contract = new web3.eth.Contract(ABI, process.argv[2]);
         const result = await contract.methods.isMinter(process.argv[4]).call();
 
-        if (result) targetMinterAddr = process.argv[5];
+        if (result)
+          targetMinterAddr = web3.utils.toChecksumAddress(process.argv[5]);
         else {
           console.log("Error: requestorAddr는 isMinter가 아닙니다");
           return;
         }
       } else {
-        handleError();
+        handleError(3);
         return;
       }
     }
 
     manageMinter(contractAddr, manageFunction, targetMinterAddr);
-  } else handleError();
+  } else handleError(4);
 };
 
 // minter 관리
 const manageMinter = async (ca, code, eoa) => {
-  const signer = web3.eth.accounts.privateKeyToAccount(
-    "0x" + process.env.PRIVATE_KEY
-  );
-
   // 관리자(서명자) 정보 추가
   web3.eth.accounts.wallet.add(signer);
 

@@ -4,10 +4,13 @@ const BYTECODE = require("../../build/contracts/ERC1400.json").bytecode;
 require("dotenv").config();
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
+const signer = web3.eth.accounts.privateKeyToAccount(
+  "0x" + process.env.PRIVATE_KEY
+);
 
-const handleError = () => {
+const handleError = (number) => {
   console.log(
-    "유효하지 않은 인자 (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#ce95418216684d33bbae58a39d155cab 참고)"
+    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#ce95418216684d33bbae58a39d155cab 참고)`
   );
 };
 
@@ -28,7 +31,7 @@ const argumentCheck = () => {
       isNaN(process.argv[5]) ||
       isNaN(process.argv[6])
     ) {
-      handleError();
+      handleError(1);
       return;
     }
 
@@ -55,6 +58,13 @@ const argumentCheck = () => {
         tokenPartitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
     }
 
+    // 초기 tokenController에 시스템 owner와 requestorAddr가 포함되어 있지 않은 경우 강제로 추가
+    if (!tokenControllers.includes(process.argv[2]))
+      tokenControllers.push(web3.utils.toChecksumAddress(process.argv[2]));
+
+    if (!tokenControllers.includes(signer.address))
+      tokenControllers.push(web3.utils.toChecksumAddress(signer.address));
+
     deploy(
       tokenName,
       tokenSymbol,
@@ -62,15 +72,11 @@ const argumentCheck = () => {
       tokenControllers,
       tokenPartitions
     );
-  } else handleError();
+  } else handleError(2);
 };
 
 // 컨트랙트 코드 배포
 const deploy = async (name, symbol, granularity, controllers, partitions) => {
-  const signer = web3.eth.accounts.privateKeyToAccount(
-    "0x" + process.env.PRIVATE_KEY
-  );
-
   // 컨트랙트 배포 관리자(서명자) 정보 추가
   web3.eth.accounts.wallet.add(signer);
 
