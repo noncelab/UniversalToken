@@ -20,43 +20,52 @@ const handleError = (number) => {
   );
 };
 
-// 인자 및 owner 사전 검증
+// 인자 및 isOwner 사전 검증
 const argumentCheck = () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
     process.argv.length > 3 &&
     process.argv.slice(2).every((arg) => arg && arg.length > 0)
   ) {
-    let contractAddr = web3.utils.toChecksumAddress(process.argv[2]);
-    let manageFunction = process.argv[3];
-    let operationParamCnt = 0;
-    let partitions = [];
+    // CA 주소 형식이 올바른지 확인
+    if (web3.utils.isAddress(process.argv[2])) {
+      let contractAddr = web3.utils.toChecksumAddress(process.argv[2]);
+      let manageFunction = process.argv[3];
+      let operationParamCnt = 0;
+      let partitions = [];
 
-    // setDefaultPartitions의 경우 requestorAddr 주소 형식이 올바른지 확인
-    if (
-      process.argv[3] === "setDefaultPartitions" &&
-      web3.utils.isAddress(process.argv[4])
-    ) {
-      // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인
+      // setDefaultPartitions의 경우 requestorAddr 주소 형식이 올바른지 확인
+      if (
+        process.argv[3] === "setDefaultPartitions" &&
+        web3.utils.isAddress(process.argv[4])
+      ) {
+        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인
 
-      // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
-      if (isNaN(process.argv[5])) {
-        handleError(1);
-        return;
-      }
+        // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
+        if (isNaN(process.argv[5])) {
+          handleError(1);
+          return;
+        }
 
-      operationParamCnt = Number(process.argv[5]);
+        operationParamCnt = Number(process.argv[5]);
 
-      if (process.argv[6] !== "-") {
-        // 특정 함수의 인자 필요 개수만큼 돌며 params 배열 대입
-        for (let i = 6; i < operationParamCnt + 6; i++) {
-          partitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
+        if (process.argv[6] !== "-") {
+          // 특정 함수의 인자 필요 개수만큼 돌며 params 배열 대입
+          for (let i = 6; i < operationParamCnt + 6; i++) {
+            partitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
+          }
         }
       }
-    }
 
-    manageDefaultPartition(contractAddr, manageFunction, partitions);
-  } else handleError(3);
+      if (
+        ["getDefaultPartitions", "setDefaultPartitions"].includes(
+          manageFunction
+        )
+      )
+        manageDefaultPartition(contractAddr, manageFunction, partitions);
+      else handleError(2);
+    } else handleError(3);
+  } else handleError(4);
 };
 
 // defaultPartition 관리

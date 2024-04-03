@@ -20,7 +20,7 @@ const handleError = (number) => {
   );
 };
 
-// 인자 및 owner 사전 검증
+// 인자 및 isOwner 사전 검증
 const argumentCheck = async () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
