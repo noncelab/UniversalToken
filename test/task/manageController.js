@@ -13,7 +13,7 @@ const handleError = (number) => {
   );
 };
 
-// 인자 사전 검증
+// 인자 및 owner 사전 검증
 const argumentCheck = async () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
@@ -35,7 +35,7 @@ const argumentCheck = async () => {
       return;
     }
 
-    let contractAddr = process.argv[2];
+    let contractAddr = web3.utils.toChecksumAddress(process.argv[2]);
     let manageFunction = process.argv[3];
     let operationParamCnt = 0;
     let params = [];
@@ -47,18 +47,19 @@ const argumentCheck = async () => {
     ) {
       // requestorAddr 주소 형식이 올바른지 확인
       if (web3.utils.isAddress(process.argv[4])) {
-        // 관리자(서명자) 정보 추가
-        // web3.eth.accounts.wallet.add(signer);
-
-        // const contract = new web3.eth.Contract(ABI, process.argv[2]);
-
-        // TODO: requestorAddr가 컨트랙트 owner인지 확인
+        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인
 
         // params 배열에 requestorAddr 추가
         params.push(web3.utils.toChecksumAddress(process.argv[4]));
 
         if (manageFunction === "setControllers") {
           // 컨트롤러 지정
+          // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
+          if (isNaN(process.argv[5])) {
+            handleError(2);
+            return;
+          }
+
           operationParamCnt = Number(process.argv[5]);
 
           if (process.argv[6] !== "-") {
@@ -71,7 +72,7 @@ const argumentCheck = async () => {
                   web3.utils.toChecksumAddress(process.argv[i])
                 );
               } else {
-                handleError(2);
+                handleError(3);
                 return;
               }
             }
@@ -79,6 +80,13 @@ const argumentCheck = async () => {
         } else if (manageFunction === "setPartitionControllers") {
           // 파티션별 컨트롤러 지정
           params.push(web3.utils.toHex(process.argv[5]).padEnd(66, "0"));
+
+          // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
+          if (isNaN(process.argv[6])) {
+            handleError(4);
+            return;
+          }
+
           operationParamCnt = Number(process.argv[6]);
 
           if (process.argv[7] !== "-") {
@@ -91,7 +99,7 @@ const argumentCheck = async () => {
                   web3.utils.toChecksumAddress(process.argv[i])
                 );
               } else {
-                handleError(3);
+                handleError(5);
                 return;
               }
             }
@@ -100,7 +108,7 @@ const argumentCheck = async () => {
 
         params.push(tempOperators);
       } else {
-        handleError(4);
+        handleError(6);
         return;
       }
     } else if (manageFunction === "controllersByPartition") {
@@ -109,7 +117,7 @@ const argumentCheck = async () => {
     }
 
     manageController(contractAddr, manageFunction, params);
-  } else handleError(5);
+  } else handleError(7);
 };
 
 // controller 관리

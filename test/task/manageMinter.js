@@ -30,7 +30,7 @@ const argumentCheck = async () => {
       return;
     }
 
-    let contractAddr = process.argv[2];
+    let contractAddr = web3.utils.toChecksumAddress(process.argv[2]);
     let manageFunction = process.argv[3];
     let targetMinterAddr;
 

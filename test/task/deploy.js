@@ -27,7 +27,7 @@ const argumentCheck = () => {
     // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
     if (
       isNaN(process.argv[4]) ||
-      process.argv[4] < 1 ||
+      Number(process.argv[4]) < 1 ||
       isNaN(process.argv[5]) ||
       isNaN(process.argv[6])
     ) {
