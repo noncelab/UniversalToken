@@ -53,7 +53,7 @@ const argumentCheck = async () => {
         params.push(web3.utils.toChecksumAddress(process.argv[4]));
 
         if (manageFunction === "setControllers") {
-          // 컨트롤러 지정
+          // controller 지정
           // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
           if (isNaN(process.argv[5])) {
             handleError(2);
@@ -78,7 +78,7 @@ const argumentCheck = async () => {
             }
           }
         } else if (manageFunction === "setPartitionControllers") {
-          // 파티션별 컨트롤러 지정
+          // 파티션별 controller 지정
           params.push(web3.utils.toHex(process.argv[5]).padEnd(66, "0"));
 
           // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
@@ -112,7 +112,7 @@ const argumentCheck = async () => {
         return;
       }
     } else if (manageFunction === "controllersByPartition") {
-      // 파티션별 컨트롤러 조회
+      // 파티션별 controller 조회
       params.push(web3.utils.toHex(process.argv[4]).padEnd(66, "0"));
     }
 
@@ -131,19 +131,19 @@ const manageController = async (ca, code, params) => {
   let deployTx = "";
 
   if (code === "controllers") {
-    // 현재 컨트롤러 리스트 조회
+    // 현재 controller 리스트 조회
     deployTx = contract.methods.controllers();
   } else if (code === "isControllable") {
     // 현재 컨트롤 가능한 상태인지 확인
     deployTx = contract.methods.isControllable();
   } else if (code === "setControllers") {
-    // 컨트롤러 지정
+    // controller 지정
     deployTx = contract.methods.setControllers(params[1]);
   } else if (code === "controllersByPartition") {
-    // 파티션별 컨트롤러 리스트 조회
+    // 파티션별 controller 리스트 조회
     deployTx = contract.methods.controllersByPartition(params[0]);
   } else if (code === "setPartitionControllers") {
-    // 파티션별 컨트롤러 지정
+    // 파티션별 controller 지정
     deployTx = contract.methods.setPartitionControllers(params[1], params[2]);
   }
 

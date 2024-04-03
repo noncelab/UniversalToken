@@ -42,7 +42,7 @@ const argumentCheck = () => {
     let tokenControllers = [];
     let tokenPartitions = [];
 
-    // tokenControllersCnt 수만큼 돌며 컨트롤러 배열 대입
+    // tokenControllersCnt 수만큼 돌며 controller 배열 대입
     for (let i = 8; i < tokenControllersCnt + 8; i++) {
       if (process.argv[i] !== "-" && web3.utils.isAddress(process.argv[i]))
         tokenControllers.push(web3.utils.toChecksumAddress(process.argv[i]));

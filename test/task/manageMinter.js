@@ -68,7 +68,7 @@ const argumentCheck = async () => {
         if (result)
           targetMinterAddr = web3.utils.toChecksumAddress(process.argv[5]);
         else {
-          console.log("Error: requestorAddr는 isMinter가 아닙니다");
+          console.log("Error: requestorAddr는 minter가 아닙니다");
           return;
         }
       } else {
