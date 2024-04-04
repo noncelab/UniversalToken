@@ -56,7 +56,7 @@ const argumentCheck = async () => {
               params.push(process.argv[5]);
             }
           } else {
-            console.log("Error: requestorAddr는 controller가 아닙니다");
+            console.log(`Error: requestorAddr ${process.argv[4]}는 controller가 아닙니다`);
             return;
           }
         }
@@ -68,7 +68,11 @@ const argumentCheck = async () => {
         return;
       }
 
-      manageDocument(contractAddr, manageFunction, params);
+      return {
+        contractAddr, 
+        manageFunction, 
+        params
+      } 
     } else handleError(2);
   } else handleError(3);
 };
@@ -81,55 +85,64 @@ const manageDocument = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "getDocument") {
     // 특정 이름의 문서 조회
-    deployTx = contract.methods.getDocument(
+    tx = contract.methods.getDocument(
       web3.utils.toHex(params[0]).padEnd(66, "0")
     );
   } else if (code === "setDocument") {
     // 특정 문서 등록/수정
-    deployTx = contract.methods.setDocument(
+    tx = contract.methods.setDocument(
       web3.utils.toHex(params[0]).padEnd(66, "0"),
       params[1],
       params[2]
     );
   } else if (code === "removeDocument") {
     // 특정 문서 삭제
-    deployTx = contract.methods.removeDocument(
+    tx = contract.methods.removeDocument(
       web3.utils.toHex(params[0]).padEnd(66, "0")
     );
   } else if (code === "getAllDocuments") {
-    // 특정 문서 삭제
-    deployTx = contract.methods.getAllDocuments();
+    // 모든 문서
+    tx = contract.methods.getAllDocuments();
   }
 
   // document 관리 호출
   if (["getDocument", "getAllDocuments"].includes(code)) {
     // 단순 조회
-    const result = await deployTx.call();
+    try {
+      const result = await tx.call();
 
-    if (result[2]) {
-      console.log("[Result]");
-      console.log("uri:", result[0]);
-      console.log("docHash:", result[1]);
-      console.log(
-        "timestamp:",
-        result[2],
-        "(",
-        new Date(result[2] * 1000),
-        ")"
-      );
-    } else {
-      console.log("Result:", result);
+      if (result[2]) {
+        console.log("[Result]");
+        console.log("name:", params[0])
+        console.log("uri:", result[0]);
+        console.log("docHash:", result[1]);
+        console.log(
+          "timestamp:",
+          result[2],
+          "(",
+          new Date(result[2] * 1000),
+          ")"
+        );
+      } else {
+        console.log("Result:", result);
+      }
+    } catch(e) {
+      // 요청한 이름의 document struct가 없는 경우. Execution reverted
+      console.log(e.message);
+      if(code === "getDocument") { 
+        console.log("Document does not exist.");
+      }
     }
   } else {
     // 트랜잭션 전송
-    await deployTx
+    await tx
       .send({
         from: signer.address,
-        gas: await deployTx.estimateGas({ from: signer.address }),
+        gas: await tx.estimateGas({ from: signer.address }),
       })
       .once("transactionHash", (txHash) => {
         console.log("TxHash:", txHash);
@@ -140,4 +153,13 @@ const manageDocument = async (ca, code, params) => {
   }
 };
 
-argumentCheck();
+const test = async () => {
+  const parameterObject = await argumentCheck();
+  console.log(`Trying call/send ${parameterObject.manageFunction} ...`);
+  manageDocument(parameterObject.contractAddr,
+    parameterObject.manageFunction,
+    parameterObject.params
+  );
+}
+
+test();
