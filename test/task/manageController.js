@@ -123,7 +123,13 @@ const argumentCheck = async () => {
       params.push(web3.utils.toHex(process.argv[4]).padEnd(66, "0"));
     }
 
-    manageController(contractAddr, manageFunction, params);
+    return {
+      contractAddr,
+      manageFunction,
+      params
+    }
+    
+    // manageController(contractAddr, manageFunction, params);
   } else handleError(7);
 };
 
@@ -135,23 +141,23 @@ const manageController = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "controllers") {
     // 현재 controller 리스트 조회
-    deployTx = contract.methods.controllers();
+    tx = contract.methods.controllers();
   } else if (code === "isControllable") {
     // 현재 컨트롤 가능한 상태인지 확인
-    deployTx = contract.methods.isControllable();
+    tx = contract.methods.isControllable();
   } else if (code === "setControllers") {
     // controller 지정
-    deployTx = contract.methods.setControllers(params[1]);
+    tx = contract.methods.setControllers(params[1]);
   } else if (code === "controllersByPartition") {
     // 파티션별 controller 리스트 조회
-    deployTx = contract.methods.controllersByPartition(params[0]);
+    tx = contract.methods.controllersByPartition(params[0]);
   } else if (code === "setPartitionControllers") {
     // 파티션별 controller 지정
-    deployTx = contract.methods.setPartitionControllers(params[1], params[2]);
+    tx = contract.methods.setPartitionControllers(params[1], params[2]);
   }
 
   // controller 관리 호출
@@ -159,15 +165,15 @@ const manageController = async (ca, code, params) => {
     ["controllers", "isControllable", "controllersByPartition"].includes(code)
   ) {
     // 단순 조회
-    const result = await deployTx.call();
+    const result = await tx.call();
 
     console.log("Result:", result);
   } else {
     // 트랜잭션 전송
-    await deployTx
+    await tx
       .send({
         from: signer.address,
-        gas: await deployTx.estimateGas({ from: signer.address }),
+        gas: await tx.estimateGas({ from: signer.address }),
       })
       .once("transactionHash", (txHash) => {
         console.log("TxHash:", txHash);
@@ -178,4 +184,13 @@ const manageController = async (ca, code, params) => {
   }
 };
 
-argumentCheck();
+const test = async () => {
+  const parameterObject = await argumentCheck();
+  console.log(`Trying call/send ${parameterObject.manageFunction} ...`)
+  await manageController(parameterObject.contractAddr,
+    parameterObject.manageFunction,
+    parameterObject.params
+  );  
+}
+
+test();
