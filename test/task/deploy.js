@@ -21,6 +21,19 @@ const handleError = (number) => {
   );
 };
 
+// 디폴트 파티션 
+const partition1_short =
+  "7265736572766564000000000000000000000000000000000000000000000000"; // reserved in hex
+const partition2_short =
+  "6973737565640000000000000000000000000000000000000000000000000000"; // issued in hex
+const partition3_short =
+  "6c6f636b65640000000000000000000000000000000000000000000000000000"; // locked in hex
+const partition1 = "0x".concat(partition1_short);
+const partition2 = "0x".concat(partition2_short);
+const partition3 = "0x".concat(partition3_short);
+
+const defaultPartitions = [partition1, partition2, partition3];
+
 // 인자 사전 검증
 const argumentCheck = () => {
   // 필요한 인자가 모두 입력되었는지 확인
@@ -65,6 +78,11 @@ const argumentCheck = () => {
         tokenPartitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
     }
 
+    // 파티션이 지정되지 않은 경우 기본 파티션 지정: reserved issued locked 
+    if(tokenPartitions.length === 0) {
+      tokenPartitions = defaultPartitions.map((item) => item);
+    }
+
     // 초기 tokenController에 시스템 owner와 requestorAddr가 포함되어 있지 않은 경우 강제로 추가
     if (!tokenControllers.includes(process.argv[2]))
       tokenControllers.push(web3.utils.toChecksumAddress(process.argv[2]));
@@ -72,23 +90,31 @@ const argumentCheck = () => {
     if (!tokenControllers.includes(signer.address))
       tokenControllers.push(web3.utils.toChecksumAddress(signer.address));
 
-    deploy(
+    // 이 함수 안에서는 args 체크만 수행함.
+    // deploy(
+    //   tokenName,
+    //   tokenSymbol,
+    //   tokenGranularity,
+    //   tokenControllers,
+    //   tokenPartitions
+    // );
+    return {
       tokenName,
       tokenSymbol,
       tokenGranularity,
       tokenControllers,
       tokenPartitions
-    );
+    }
   } else handleError(2);
 };
 
 // 컨트랙트 코드 배포
 const deploy = async (name, symbol, granularity, controllers, partitions) => {
+  let transactionHash;
   // 컨트랙트 배포 관리자(서명자) 정보 추가
   web3.eth.accounts.wallet.add(signer);
 
   const contract = new web3.eth.Contract(ABI);
-
   // 컨트랙트 생성자 전달 값 설정
   const deployTx = contract.deploy({
     data: BYTECODE,
@@ -103,9 +129,47 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
     })
     .once("transactionHash", (txHash) => {
       console.log("TxHash:", txHash);
+      transactionHash = txHash;
     });
 
-  console.log("CA:", deployedContract.options.address);
+  return {
+    CA: deployedContract.options.address,
+    TxHash: transactionHash,
+    SystemOwner: signer.address,
+    Requestor: process.argv[2]
+  }
 };
 
-argumentCheck();
+const addMinter = async (ca, newMinter) => {
+  web3.eth.accounts.wallet.add(signer);
+  const contract = new web3.eth.Contract(ABI, ca);
+  const addMinterTx = contract.methods.addMinter(newMinter);
+  await addMinterTx
+    .send({
+      from: signer.address,
+      gas: await addMinterTx.estimateGas({ from: signer.address }),
+    })
+    .once("transactionHash", (txHash) => {
+      console.log("TxHash:", txHash);
+    })
+    .once("receipt", (result) => {
+      console.log("Result:", result);
+    });
+}
+
+const test = async() => {
+  console.log('1. Check Arguments...')
+  const parameterObject = argumentCheck();
+  console.log('2. Start deploying...')
+  const result = await deploy(parameterObject.tokenName, 
+    parameterObject.tokenSymbol, 
+    parameterObject.tokenGranularity, 
+    parameterObject.tokenControllers, 
+    parameterObject.tokenPartitions
+  );
+  console.log('Finish deployment\n', result);
+  console.log('3. Add requestor as minter...');
+  await addMinter(result.CA, process.argv[2]);
+};
+
+test();
