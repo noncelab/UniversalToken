@@ -84,7 +84,12 @@ const argumentCheck = async () => {
       }
     }
 
-    manageMinter(contractAddr, manageFunction, targetMinterAddr);
+    return {
+      contractAddr,
+      manageFunction,
+      targetMinterAddr,
+    }
+    // manageMinter(contractAddr, manageFunction, targetMinterAddr);
   } else handleError(4);
 };
 
@@ -96,39 +101,57 @@ const manageMinter = async (ca, code, eoa) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "isMinter") {
     // minter인지 확인
-    deployTx = contract.methods.isMinter(eoa);
+    tx = contract.methods.isMinter(eoa);
   } else if (code === "addMinter") {
     // 특정 주소 minter 권한 추가
-    deployTx = contract.methods.addMinter(eoa);
+    tx = contract.methods.addMinter(eoa);
   } else if (code === "removeMinter") {
     // 특정 주소 minter 권한 제거
-    deployTx = contract.methods.removeMinter(eoa);
+    tx = contract.methods.removeMinter(eoa);
   }
 
   // minter 관리 호출
   if (code === "isMinter") {
     // 단순 조회
-    const result = await deployTx.call();
+    const result = await tx.call();
 
-    console.log("Result:", result);
-  } else {
+    console.log(`Result: ${eoa} is${result ? '': ' NOT'} a minter.`);
+  } else if(code === "addMinter" || code === "removeMinter"){
     // 트랜잭션 전송
-    await deployTx
-      .send({
-        from: signer.address,
-        gas: await deployTx.estimateGas({ from: signer.address }),
-      })
-      .once("transactionHash", (txHash) => {
-        console.log("TxHash:", txHash);
-      })
-      .once("receipt", (result) => {
-        console.log("Result:", result);
-      });
+    try{
+      await tx
+        .send({
+          from: signer.address,
+          gas: await tx.estimateGas({ from: signer.address }),
+        })
+        .once("transactionHash", (txHash) => {
+          console.log("TxHash:", txHash);
+        })
+        .once("receipt", (result) => {
+          console.log("Result:", result);
+        });
+    } catch(e) {
+      console.error(e.message);
+      if(code === "addMinter") {
+        console.log("Check if the address is already the minter.")
+      } else if(code === "removeMinter") {
+        console.log("Check if the address is not a minter.")
+      }
+    }
   }
 };
 
-argumentCheck();
+const test = async () => {
+  const parameterObject = await argumentCheck();
+  console.log(`Trying call/send ${parameterObject.manageFunction} ${parameterObject.targetMinterAddr}...`)
+  await manageMinter(parameterObject.contractAddr, 
+    parameterObject.manageFunction, 
+    parameterObject.targetMinterAddr
+  );
+}
+
+test();
