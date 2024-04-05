@@ -21,7 +21,7 @@ const handleError = (number) => {
 };
 
 // 인자 및 isOwner 사전 검증
-const argumentCheck = () => {
+const argumentCheck = async () => {
   // 필요한 인자가 모두 입력되었는지 확인
   if (
     process.argv.length > 3 &&
@@ -39,7 +39,33 @@ const argumentCheck = () => {
         process.argv[3] === "setDefaultPartitions" &&
         web3.utils.isAddress(process.argv[4])
       ) {
-        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인
+        let requestorAddr = process.argv[4];
+
+        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인 필요
+        // 컨트랙트 상으로는 onlyOwner인 경우에만 해당 기능을 수행할 수 있으며,
+        // 이 스크립트에서는 함수 호출자가 isMinter 및 isController인지 확인하는 정도로 사전 검증함
+        // DB에 저장된 실질적 컨트랙트 owner도 확인 필요
+        web3.eth.accounts.wallet.add(signer);
+
+        // requestorAddr가 minter 또는 controller인지 확인
+        const contract = new web3.eth.Contract(ABI, contractAddr);
+        const minterResult = await contract.methods
+          .isMinter(web3.utils.toChecksumAddress(requestorAddr))
+          .call();
+        const controllerResult = await contract.methods.controllers().call();
+
+        if (
+          !minterResult ||
+          !controllerResult ||
+          !controllerResult.includes(
+            web3.utils.toChecksumAddress(requestorAddr)
+          )
+        ) {
+          console.log(
+            `Error: requestorAddr ${requestorAddr}는 minter 또는 controller가 아닙니다`
+          );
+          return;
+        }
 
         // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
         if (isNaN(process.argv[5])) {
@@ -55,6 +81,12 @@ const argumentCheck = () => {
             partitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
           }
         }
+
+        // 파티션이 하나도 없는 경우 에러 출력
+        if (JSON.stringify(partitions) === "[]") {
+          console.log("Error: At least one partition is required");
+          return;
+        }
       }
 
       if (
@@ -62,7 +94,11 @@ const argumentCheck = () => {
           manageFunction
         )
       )
-        manageDefaultPartition(contractAddr, manageFunction, partitions);
+        return {
+          contractAddr,
+          manageFunction,
+          partitions,
+        };
       else handleError(2);
     } else handleError(3);
   } else handleError(4);
@@ -108,4 +144,18 @@ const manageDefaultPartition = async (ca, code, params) => {
   }
 };
 
-argumentCheck();
+const test = async () => {
+  const parameterObject = await argumentCheck();
+
+  if (parameterObject) {
+    console.log(`Trying to call/send ${parameterObject.manageFunction}...`);
+
+    await manageDefaultPartition(
+      parameterObject.contractAddr,
+      parameterObject.manageFunction,
+      parameterObject.partitions
+    );
+  }
+};
+
+test();
