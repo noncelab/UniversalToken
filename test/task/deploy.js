@@ -170,11 +170,8 @@ const test = async () => {
     if (result) {
       console.log("Finish deployment\n", result);
 
-      // constructor에서 minter로 추가하고 있기 때문에 추가로 minter로 추가할 필요 없음
-      // addMinter는 minter로 지정된 사용자가 또 다른 minter를 추가하고 싶을 때 사용함
-
       // console.log("3. Add requestor as minter...");
-      // await addMinter(result.CA, result.Requestor);
+      await addMinter(result.CA, result.Requestor);
     }
   }
 };
