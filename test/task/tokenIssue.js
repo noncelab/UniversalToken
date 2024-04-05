@@ -5,6 +5,7 @@
  * @see 관련 문서: https://www.notion.so/noncelab/SC-issue-c1d874a3ffb141f39c6fb27ce71dfa68?pvs=4#4a8029c984904fe18925f407e63f1058
  */
 
+const { balance } = require("@openzeppelin/test-helpers");
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();
@@ -67,37 +68,38 @@ const argumentCheck = async () => {
 
         // 전송 데이터가 포함되는 경우 data에 추가
         if (manageFunction === "issue") {
-          // defaultPartition이 있는지 여부 확인
-          const defaultPartition = await contract.methods
-            .getDefaultPartitions()
-            .call();
-
-          if (JSON.stringify(defaultPartition) === "[]") {
-            console.log(
-              "Error: 토큰 발행을 위해 defaultPartition을 설정해주세요"
-            );
-            return;
-          }
-
           // 단순 토큰 발행일 때 데이터가 있는 경우
           if (process.argv[7]) params.data = process.argv[7];
         } else if (manageFunction === "issueByPartition") {
           // 파티션별 토큰 발행인 경우
-          data.partition = process.argv[7];
+          if (process.argv[7]) {
+            let partition = process.argv[7];
 
-          // 데이터가 있는 경우
-          if (process.argv[8]) params.data = process.argv[8];
+            params.partition = partition;
+
+            // 데이터가 있는 경우
+            if (process.argv[8]) params.data = process.argv[8];
+          } else {
+            handleError(1);
+            return;
+          }
         }
 
         if (["issue", "issueByPartition"].includes(manageFunction)) {
-          issueToken(contractAddr, manageFunction, params);
-        } else handleError(1);
+          return {
+            contractAddr,
+            manageFunction,
+            params,
+          };
+        } else handleError(2);
       } else {
-        console.log("Error: requestorAddr는 minter가 아닙니다");
+        console.log(
+          `Error: requestorAddr ${requestorAddr}는 minter가 아닙니다`
+        );
         return;
       }
-    } else handleError(2);
-  } else handleError(3);
+    } else handleError(3);
+  } else handleError(4);
 };
 
 // 토큰 발행
@@ -120,7 +122,7 @@ const issueToken = async (ca, code, params) => {
   } else {
     // 파티션별 토큰 발행
     deployTx = contract.methods.issueByPartition(
-      params.partition,
+      web3.utils.toHex(params.partition).padEnd(66, "0"),
       params.targetTokenHolder,
       params.value,
       web3.utils.utf8ToHex(params.data)
@@ -136,9 +138,86 @@ const issueToken = async (ca, code, params) => {
     .once("transactionHash", (txHash) => {
       console.log("TxHash:", txHash);
     })
-    .once("receipt", (result) => {
+    .once("receipt", async (result) => {
       console.log("Result:", result);
+
+      // 토큰 발행 후 잔액 및 총량 확인
+      await checkBalance(
+        ca,
+        code,
+        params.targetTokenHolder,
+        params.partition ? params.partition : undefined
+      );
     });
 };
 
-argumentCheck();
+// 토큰 잔액 및 총량 확인
+const checkBalance = async (ca, manageFunction, tokenHolder, partition) => {
+  web3.eth.accounts.wallet.add(signer);
+
+  // 토큰 총량 조회
+  const contract = new web3.eth.Contract(ABI, ca);
+  let totalSupply = 0;
+  let balanceOfTokenHolder = 0;
+
+  if (manageFunction === "issue") {
+    // 단순 토큰 발행
+    const supplyResult = await contract.methods.totalSupply().call();
+
+    if (supplyResult) totalSupply = supplyResult;
+
+    const balanceResult = await contract.methods
+      .balanceOf(web3.utils.toChecksumAddress(tokenHolder))
+      .call();
+
+    if (balanceResult) balanceOfTokenHolder = balanceResult;
+
+    console.log("Total supply:", supplyResult);
+    console.log(`Balance of ${tokenHolder}:`, balanceResult);
+  } else if (manageFunction === "issueByPartition") {
+    // 파티션별 토큰 발행
+    const supplyResult = await contract.methods
+      .totalSupplyByPartition(web3.utils.toHex(partition).padEnd(66, "0"))
+      .call();
+
+    if (supplyResult) totalSupply = supplyResult;
+
+    const balanceResult = await contract.methods
+      .balanceOfByPartition(
+        web3.utils.toHex(partition).padEnd(66, "0"),
+        web3.utils.toChecksumAddress(tokenHolder)
+      )
+      .call();
+
+    if (balanceResult) balanceOfTokenHolder = balanceResult;
+
+    console.log(
+      `Total supply by ${partition} (${web3.utils
+        .toHex(partition)
+        .padEnd(66, "0")}):`,
+      supplyResult
+    );
+    console.log(
+      `Balance of by ${partition} (${web3.utils
+        .toHex(partition)
+        .padEnd(66, "0")}):`,
+      balanceResult
+    );
+  }
+};
+
+const test = async () => {
+  const parameterObject = await argumentCheck();
+
+  if (parameterObject) {
+    console.log(`Trying to call/send ${parameterObject.manageFunction}...`);
+
+    await issueToken(
+      parameterObject.contractAddr,
+      parameterObject.manageFunction,
+      parameterObject.params
+    );
+  }
+};
+
+test();
