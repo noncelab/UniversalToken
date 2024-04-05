@@ -79,10 +79,15 @@ const argumentCheck = async () => {
 
         params.push(process.argv[4]);
         params.push(process.argv[5]);
-      } else if (manageFunction === "isOperatorForPartition") {
+      } else if (
+        ["isOperatorForPartition", "allowanceByPartition"].includes(
+          manageFunction
+        )
+      ) {
         // 파티션별 operator 여부 조회
         if (!process.argv[4] || !process.argv[5] || !process.argv[6]) {
-          // isOperatorForPartition인 경우 partition, operator와 targetTokenHolder를 입력했는지 확인
+          // 1. isOperatorForPartition인 경우 partition, operator와 targetTokenHolder를 입력했는지 확인
+          // 2. allowanceByPartition인 경우 partition, targetTokenHolder와 targetTokenSpender를 입력했는지 확인
           handleError(3);
           return;
         }
@@ -167,6 +172,13 @@ const checkVariable = async (ca, code, params) => {
       deployTx = contract.methods.balanceOfByPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0"), // partition
         web3.utils.toChecksumAddress(params[1]) // targetTokenHolder
+      );
+      break;
+    case "allowanceByPartition":
+      deployTx = contract.methods.allowanceByPartition(
+        web3.utils.toHex(params[0]).padEnd(66, "0"), // partition
+        web3.utils.toChecksumAddress(params[1]), // targetTokenHolder
+        web3.utils.toChecksumAddress(params[2]) // targetTokenSpender
       );
       break;
     case "isOperator":
