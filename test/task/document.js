@@ -42,7 +42,7 @@ const argumentCheck = async () => {
           // 관리자(서명자) 정보 추가
           web3.eth.accounts.wallet.add(signer);
 
-          const contract = new web3.eth.Contract(ABI, process.argv[2]);
+          const contract = new web3.eth.Contract(ABI, contractAddr);
           const result = await contract.methods.controllers().call();
 
           if (result.includes(web3.utils.toChecksumAddress(process.argv[4]))) {
@@ -56,7 +56,9 @@ const argumentCheck = async () => {
               params.push(process.argv[5]);
             }
           } else {
-            console.log(`Error: requestorAddr ${process.argv[4]}는 controller가 아닙니다`);
+            console.log(
+              `Error: requestorAddr ${process.argv[4]}는 controller가 아닙니다`
+            );
             return;
           }
         }
@@ -69,10 +71,10 @@ const argumentCheck = async () => {
       }
 
       return {
-        contractAddr, 
-        manageFunction, 
-        params
-      } 
+        contractAddr,
+        manageFunction,
+        params,
+      };
     } else handleError(2);
   } else handleError(3);
 };
@@ -117,7 +119,7 @@ const manageDocument = async (ca, code, params) => {
 
       if (result[2]) {
         console.log("[Result]");
-        console.log("name:", params[0])
+        console.log("name:", params[0]);
         console.log("uri:", result[0]);
         console.log("docHash:", result[1]);
         console.log(
@@ -130,12 +132,11 @@ const manageDocument = async (ca, code, params) => {
       } else {
         console.log("Result:", result);
       }
-    } catch(e) {
+    } catch (e) {
       // 요청한 이름의 document struct가 없는 경우. Execution reverted
       console.log(e.message);
-      if(code === "getDocument") { 
-        console.log("Document does not exist.");
-      }
+
+      if (code === "getDocument") console.log("Document does not exist");
     }
   } else {
     // 트랜잭션 전송
@@ -155,11 +156,16 @@ const manageDocument = async (ca, code, params) => {
 
 const test = async () => {
   const parameterObject = await argumentCheck();
-  console.log(`Trying call/send ${parameterObject.manageFunction} ...`);
-  manageDocument(parameterObject.contractAddr,
-    parameterObject.manageFunction,
-    parameterObject.params
-  );
-}
+
+  if (parameterObject) {
+    console.log(`Trying to call/send ${parameterObject.manageFunction}...`);
+
+    manageDocument(
+      parameterObject.contractAddr,
+      parameterObject.manageFunction,
+      parameterObject.params
+    );
+  }
+};
 
 test();

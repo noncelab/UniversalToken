@@ -45,7 +45,7 @@ const argumentCheck = async () => {
       targetMinterAddr = web3.utils.toChecksumAddress(process.argv[4]);
     else {
       // requestorAddr가 addMinter 또는 removeMinter를 요청한 경우 minter인지 확인
-      if (manageFunction === "addMinter" || manageFunction === "removeMinter") {
+      if (["addMinter", "removeMinter"].includes(manageFunction)) {
         // requestorAddr와 targetMinterAddr가 주소 형식인지 확인
         if (
           !web3.utils.isAddress(process.argv[4]) ||
@@ -69,7 +69,7 @@ const argumentCheck = async () => {
         // 관리자(서명자) 정보 추가
         web3.eth.accounts.wallet.add(signer);
 
-        const contract = new web3.eth.Contract(ABI, process.argv[2]);
+        const contract = new web3.eth.Contract(ABI, contractAddr);
         const result = await contract.methods.isMinter(process.argv[4]).call();
 
         if (result)
@@ -88,7 +88,7 @@ const argumentCheck = async () => {
       contractAddr,
       manageFunction,
       targetMinterAddr,
-    }
+    };
     // manageMinter(contractAddr, manageFunction, targetMinterAddr);
   } else handleError(4);
 };
@@ -119,10 +119,10 @@ const manageMinter = async (ca, code, eoa) => {
     // 단순 조회
     const result = await tx.call();
 
-    console.log(`Result: ${eoa} is${result ? '': ' NOT'} a minter.`);
-  } else if(code === "addMinter" || code === "removeMinter"){
+    console.log(`Result: ${eoa} is${result ? "" : " NOT"} a minter.`);
+  } else if (code === "addMinter" || code === "removeMinter") {
     // 트랜잭션 전송
-    try{
+    try {
       await tx
         .send({
           from: signer.address,
@@ -134,24 +134,31 @@ const manageMinter = async (ca, code, eoa) => {
         .once("receipt", (result) => {
           console.log("Result:", result);
         });
-    } catch(e) {
+    } catch (e) {
       console.error(e.message);
-      if(code === "addMinter") {
-        console.log("Check if the address is already the minter.")
-      } else if(code === "removeMinter") {
-        console.log("Check if the address is not a minter.")
-      }
+
+      if (code === "addMinter")
+        console.log("Check if the address is already the minter.");
+      else if (code === "removeMinter")
+        console.log("Check if the address is not a minter.");
     }
   }
 };
 
 const test = async () => {
   const parameterObject = await argumentCheck();
-  console.log(`Trying call/send ${parameterObject.manageFunction} ${parameterObject.targetMinterAddr}...`)
-  await manageMinter(parameterObject.contractAddr, 
-    parameterObject.manageFunction, 
-    parameterObject.targetMinterAddr
-  );
-}
+
+  if (parameterObject) {
+    console.log(
+      `Trying to call/send ${parameterObject.manageFunction} ${parameterObject.targetMinterAddr}...`
+    );
+
+    await manageMinter(
+      parameterObject.contractAddr,
+      parameterObject.manageFunction,
+      parameterObject.targetMinterAddr
+    );
+  }
+};
 
 test();

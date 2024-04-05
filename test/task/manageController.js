@@ -50,14 +50,37 @@ const argumentCheck = async () => {
 
     // 트랜잭션 전송이 필요한 항목인 경우 controller 상태 확인 및 params 할당
     if (
-      ["setControllers", "setPartitionControllers"].includes(process.argv[3])
+      ["setControllers", "setPartitionControllers"].includes(manageFunction)
     ) {
-      // requestorAddr 주소 형식이 올바른지 확인
-      if (web3.utils.isAddress(process.argv[4])) {
-        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인
+      let requestorAddr = process.argv[4];
 
-        // params 배열에 requestorAddr 추가
-        params.push(web3.utils.toChecksumAddress(process.argv[4]));
+      // requestorAddr 주소 형식이 올바른지 확인
+      if (web3.utils.isAddress(requestorAddr)) {
+        // TODO: requestorAddr가 실질적 컨트랙트 owner인지 확인 필요
+        // 컨트랙트 상으로는 onlyOwner인 경우에만 해당 기능을 수행할 수 있으며,
+        // 이 스크립트에서는 함수 호출자가 isMinter 및 isController인지 확인하는 정도로 사전 검증함
+        // DB에 저장된 실질적 컨트랙트 owner도 확인 필요
+        web3.eth.accounts.wallet.add(signer);
+
+        // requestorAddr가 minter 또는 controller인지 확인
+        const contract = new web3.eth.Contract(ABI, contractAddr);
+        const minterResult = await contract.methods
+          .isMinter(web3.utils.toChecksumAddress(requestorAddr))
+          .call();
+        const controllerResult = await contract.methods.controllers().call();
+
+        if (
+          !minterResult ||
+          !controllerResult ||
+          !controllerResult.includes(
+            web3.utils.toChecksumAddress(requestorAddr)
+          )
+        ) {
+          console.log(
+            `Error: requestorAddr ${requestorAddr}는 minter 또는 controller가 아닙니다`
+          );
+          return;
+        }
 
         if (manageFunction === "setControllers") {
           // controller 지정
@@ -70,11 +93,11 @@ const argumentCheck = async () => {
           operationParamCnt = Number(process.argv[5]);
 
           if (process.argv[6] !== "-") {
-            // 특정 함수의 인자 필요 개수만큼 돌며 params 배열 대입
+            // 특정 함수의 인자 필요 개수만큼 돌며 tempOperators 배열 대입
             for (let i = 6; i < operationParamCnt + 6; i++) {
               // EOA 주소 형식이 올바른지 확인
               if (process.argv[i] && web3.utils.isAddress(process.argv[i])) {
-                // params 배열에 operator 추가
+                // tempOperators 배열에 operator 추가
                 tempOperators.push(
                   web3.utils.toChecksumAddress(process.argv[i])
                 );
@@ -84,29 +107,38 @@ const argumentCheck = async () => {
               }
             }
           }
+
+          // controller에 시스템 owner의 주소가 빠져있는 경우 강제 추가
+          if (!tempOperators.includes(signer.address))
+            tempOperators.push(signer.address);
         } else if (manageFunction === "setPartitionControllers") {
           // 파티션별 controller 지정
-          params.push(web3.utils.toHex(process.argv[5]).padEnd(66, "0"));
+          if (process.argv[5])
+            params.push(web3.utils.toHex(process.argv[5]).padEnd(66, "0"));
+          else {
+            handleError(4);
+            return;
+          }
 
           // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
           if (isNaN(process.argv[6])) {
-            handleError(4);
+            handleError(5);
             return;
           }
 
           operationParamCnt = Number(process.argv[6]);
 
           if (process.argv[7] !== "-") {
-            // 특정 함수의 인자 필요 개수만큼 돌며 params 배열 대입
+            // 특정 함수의 인자 필요 개수만큼 돌며 tempOperators 배열 대입
             for (let i = 7; i < operationParamCnt + 7; i++) {
               // EOA 주소 형식이 올바른지 확인
               if (process.argv[i] && web3.utils.isAddress(process.argv[i])) {
-                // params 배열에 operator 추가
+                // tempOperators 배열에 operator 추가
                 tempOperators.push(
                   web3.utils.toChecksumAddress(process.argv[i])
                 );
               } else {
-                handleError(5);
+                handleError(6);
                 return;
               }
             }
@@ -115,22 +147,25 @@ const argumentCheck = async () => {
 
         params.push(tempOperators);
       } else {
-        handleError(6);
+        handleError(7);
         return;
       }
     } else if (manageFunction === "controllersByPartition") {
       // 파티션별 controller 조회
-      params.push(web3.utils.toHex(process.argv[4]).padEnd(66, "0"));
+      if (process.argv[4])
+        params.push(web3.utils.toHex(process.argv[4]).padEnd(66, "0"));
+      else {
+        handleError(8);
+        return;
+      }
     }
 
     return {
       contractAddr,
       manageFunction,
-      params
-    }
-    
-    // manageController(contractAddr, manageFunction, params);
-  } else handleError(7);
+      params,
+    };
+  } else handleError(9);
 };
 
 // controller 관리
@@ -151,13 +186,13 @@ const manageController = async (ca, code, params) => {
     tx = contract.methods.isControllable();
   } else if (code === "setControllers") {
     // controller 지정
-    tx = contract.methods.setControllers(params[1]);
+    tx = contract.methods.setControllers(params[0]);
   } else if (code === "controllersByPartition") {
     // 파티션별 controller 리스트 조회
     tx = contract.methods.controllersByPartition(params[0]);
   } else if (code === "setPartitionControllers") {
     // 파티션별 controller 지정
-    tx = contract.methods.setPartitionControllers(params[1], params[2]);
+    tx = contract.methods.setPartitionControllers(params[0], params[1]);
   }
 
   // controller 관리 호출
@@ -186,11 +221,16 @@ const manageController = async (ca, code, params) => {
 
 const test = async () => {
   const parameterObject = await argumentCheck();
-  console.log(`Trying call/send ${parameterObject.manageFunction} ...`)
-  await manageController(parameterObject.contractAddr,
-    parameterObject.manageFunction,
-    parameterObject.params
-  );  
-}
+
+  if (parameterObject) {
+    console.log(`Trying to call/send ${parameterObject.manageFunction}...`);
+
+    await manageController(
+      parameterObject.contractAddr,
+      parameterObject.manageFunction,
+      parameterObject.params
+    );
+  }
+};
 
 test();

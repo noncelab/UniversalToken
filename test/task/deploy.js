@@ -21,7 +21,7 @@ const handleError = (number) => {
   );
 };
 
-// 디폴트 파티션 
+// 디폴트 파티션
 const partition1_short =
   "7265736572766564000000000000000000000000000000000000000000000000"; // reserved in hex
 const partition2_short =
@@ -78,10 +78,9 @@ const argumentCheck = () => {
         tokenPartitions.push(web3.utils.toHex(process.argv[i]).padEnd(66, "0"));
     }
 
-    // 파티션이 지정되지 않은 경우 기본 파티션 지정: reserved issued locked 
-    if(tokenPartitions.length === 0) {
+    // 파티션이 지정되지 않은 경우 기본 파티션 지정: reserved issued locked
+    if (tokenPartitions.length === 0)
       tokenPartitions = defaultPartitions.map((item) => item);
-    }
 
     // 초기 tokenController에 시스템 owner와 requestorAddr가 포함되어 있지 않은 경우 강제로 추가
     if (!tokenControllers.includes(process.argv[2]))
@@ -90,21 +89,13 @@ const argumentCheck = () => {
     if (!tokenControllers.includes(signer.address))
       tokenControllers.push(web3.utils.toChecksumAddress(signer.address));
 
-    // 이 함수 안에서는 args 체크만 수행함.
-    // deploy(
-    //   tokenName,
-    //   tokenSymbol,
-    //   tokenGranularity,
-    //   tokenControllers,
-    //   tokenPartitions
-    // );
     return {
       tokenName,
       tokenSymbol,
       tokenGranularity,
       tokenControllers,
-      tokenPartitions
-    }
+      tokenPartitions,
+    };
   } else handleError(2);
 };
 
@@ -115,6 +106,7 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
   web3.eth.accounts.wallet.add(signer);
 
   const contract = new web3.eth.Contract(ABI);
+
   // 컨트랙트 생성자 전달 값 설정
   const deployTx = contract.deploy({
     data: BYTECODE,
@@ -136,14 +128,18 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
     CA: deployedContract.options.address,
     TxHash: transactionHash,
     SystemOwner: signer.address,
-    Requestor: process.argv[2]
-  }
+    Requestor: process.argv[2],
+  };
 };
 
 const addMinter = async (ca, newMinter) => {
+  // minter 권한 추가
   web3.eth.accounts.wallet.add(signer);
+
+  // 관리자(서명자) 정보 추가
   const contract = new web3.eth.Contract(ABI, ca);
   const addMinterTx = contract.methods.addMinter(newMinter);
+
   await addMinterTx
     .send({
       from: signer.address,
@@ -155,21 +151,32 @@ const addMinter = async (ca, newMinter) => {
     .once("receipt", (result) => {
       console.log("Result:", result);
     });
-}
+};
 
-const test = async() => {
-  console.log('1. Check Arguments...')
+const test = async () => {
+  console.log("1. Check arguments...");
   const parameterObject = argumentCheck();
-  console.log('2. Start deploying...')
-  const result = await deploy(parameterObject.tokenName, 
-    parameterObject.tokenSymbol, 
-    parameterObject.tokenGranularity, 
-    parameterObject.tokenControllers, 
-    parameterObject.tokenPartitions
-  );
-  console.log('Finish deployment\n', result);
-  console.log('3. Add requestor as minter...');
-  await addMinter(result.CA, process.argv[2]);
+
+  if (parameterObject) {
+    console.log("2. Start deploying...");
+    const result = await deploy(
+      parameterObject.tokenName,
+      parameterObject.tokenSymbol,
+      parameterObject.tokenGranularity,
+      parameterObject.tokenControllers,
+      parameterObject.tokenPartitions
+    );
+
+    if (result) {
+      console.log("Finish deployment\n", result);
+
+      // constructor에서 minter로 추가하고 있기 때문에 추가로 minter로 추가할 필요 없음
+      // addMinter는 minter로 지정된 사용자가 또 다른 minter를 추가하고 싶을 때 사용함
+
+      // console.log("3. Add requestor as minter...");
+      // await addMinter(result.CA, result.Requestor);
+    }
+  }
 };
 
 test();
