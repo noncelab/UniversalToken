@@ -13,7 +13,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d7cfe39dd6714705b45a4543f540a4ba 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d7cfe39dd6714705b45a4543f540a4ba)`
   );
 };
 
@@ -93,38 +93,38 @@ const manageOperator = async (ca, code, params) => {
   if (code === "isOperator") {
     // 특정 tokenHolder의 operator인지 확인
     deployTx = contract.methods.isOperator(
-      web3.utils.toChecksumAddress(params[0]),
-      web3.utils.toChecksumAddress(params[1])
+      web3.utils.toChecksumAddress(params[0]), // operator
+      web3.utils.toChecksumAddress(params[1]) // tokenHolder
     );
   } else if (code === "isOperatorForPartition") {
     // 특정 파티션 내 tokenHolder의 operator인지 확인
     deployTx = contract.methods.isOperatorForPartition(
-      params[0],
-      web3.utils.toChecksumAddress(params[1]),
-      web3.utils.toChecksumAddress(params[2])
+      params[0], // partition
+      web3.utils.toChecksumAddress(params[1]), // operator
+      web3.utils.toChecksumAddress(params[2]) // tokenHolder
     );
   }
   // else if (code === "authorizeOperator") {
   //   // 특정 주소를 operator로 추가
   //   deployTx = contract.methods.authorizeOperator(
-  //     web3.utils.toChecksumAddress(params[0])
+  //     web3.utils.toChecksumAddress(params[0]) // operator
   //   );
   // } else if (code === "revokeOperator") {
   //   // 특정 주소의 operator 권한 제거
   //   deployTx = contract.methods.revokeOperator(
-  //     web3.utils.toChecksumAddress(params[0])
+  //     web3.utils.toChecksumAddress(params[0]) // operator
   //   );
   // } else if (code === "authorizeOperatorByPartition") {
   //   // 특정 주소를 특정 파티션의 operator로 추가
   //   deployTx = contract.methods.authorizeOperatorByPartition(
-  //     params[0],
-  //     web3.utils.toChecksumAddress(params[1])
+  //     params[0], // partition
+  //     web3.utils.toChecksumAddress(params[1]) // operator
   //   );
   // } else if (code === "revokeOperatorByPartition") {
   //   // 특정 주소를 특정 파티션의 operator에서 권한 제거
   //   deployTx = contract.methods.revokeOperatorByPartition(
-  //     params[0],
-  //     web3.utils.toChecksumAddress(params[1])
+  //     params[0], // partition
+  //     web3.utils.toChecksumAddress(params[1]) // operator
   //   );
   // }
 

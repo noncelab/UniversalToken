@@ -16,7 +16,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-setDefaultPartitions-59806abe66164d9eac22ebf8db244f96?pvs=4#9c3e2beb9ee745b4a231425cb553d5e1 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-setDefaultPartitions-59806abe66164d9eac22ebf8db244f96?pvs=4#9c3e2beb9ee745b4a231425cb553d5e1)`
   );
 };
 
@@ -62,7 +62,7 @@ const argumentCheck = async () => {
           )
         ) {
           console.log(
-            `Error: requestorAddr ${requestorAddr}는 minter 또는 controller가 아닙니다`
+            `Error: requestorAddr ${requestorAddr} is neither minter nor controller`
           );
           return;
         }

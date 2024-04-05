@@ -16,7 +16,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d5ed9a382c0047d6809d82d5fd404629 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d5ed9a382c0047d6809d82d5fd404629)`
   );
 };
 
@@ -77,7 +77,7 @@ const argumentCheck = async () => {
           )
         ) {
           console.log(
-            `Error: requestorAddr ${requestorAddr}는 minter 또는 controller가 아닙니다`
+            `Error: requestorAddr ${requestorAddr} is neither minter nor controller`
           );
           return;
         }
@@ -186,13 +186,13 @@ const manageController = async (ca, code, params) => {
     tx = contract.methods.isControllable();
   } else if (code === "setControllers") {
     // controller 지정
-    tx = contract.methods.setControllers(params[0]);
+    tx = contract.methods.setControllers(params[0]); // operators[]
   } else if (code === "controllersByPartition") {
     // 파티션별 controller 리스트 조회
-    tx = contract.methods.controllersByPartition(params[0]);
+    tx = contract.methods.controllersByPartition(params[0]); // partition
   } else if (code === "setPartitionControllers") {
     // 파티션별 controller 지정
-    tx = contract.methods.setPartitionControllers(params[0], params[1]);
+    tx = contract.methods.setPartitionControllers(params[0], params[1]); // partition operators[]
   }
 
   // controller 관리 호출

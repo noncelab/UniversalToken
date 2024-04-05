@@ -17,7 +17,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#ce95418216684d33bbae58a39d155cab 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#ce95418216684d33bbae58a39d155cab)`
   );
 };
 
@@ -41,8 +41,8 @@ const argumentCheck = () => {
     process.argv.length > 9 &&
     process.argv.slice(2).every((arg) => arg && arg.length > 0)
   ) {
-    let tokenName = process.argv[2];
-    let tokenSymbol = process.argv[3];
+    let tokenName = process.argv[3];
+    let tokenSymbol = process.argv[4];
 
     // 숫자 인자가 필요한 항목이 숫자가 아닌 경우 확인
     if (
@@ -128,7 +128,7 @@ const deploy = async (name, symbol, granularity, controllers, partitions) => {
     CA: deployedContract.options.address,
     TxHash: transactionHash,
     SystemOwner: signer.address,
-    Requestor: process.argv[2],
+    Requestor: web3.utils.toChecksumAddress(process.argv[2]),
   };
 };
 

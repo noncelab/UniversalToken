@@ -5,7 +5,6 @@
  * @see 관련 문서: https://www.notion.so/noncelab/SC-issue-c1d874a3ffb141f39c6fb27ce71dfa68?pvs=4#4a8029c984904fe18925f407e63f1058
  */
 
-const { balance } = require("@openzeppelin/test-helpers");
 const Web3 = require("web3");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();
@@ -17,7 +16,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-issue-c1d874a3ffb141f39c6fb27ce71dfa68?pvs=4#4a8029c984904fe18925f407e63f1058 참고)`
+    `Invalid Arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-issue-c1d874a3ffb141f39c6fb27ce71dfa68?pvs=4#4a8029c984904fe18925f407e63f1058)`
   );
 };
 
@@ -53,7 +52,7 @@ const argumentCheck = async () => {
         const granularity = await contract.methods.granularity().call();
 
         if (Number(value) % Number(granularity) !== 0) {
-          console.log("Error: value는 granularity의 배수여야 합니다");
+          console.log("Error: value must be multiple number of granularity");
           return;
         }
 
@@ -93,9 +92,7 @@ const argumentCheck = async () => {
           };
         } else handleError(2);
       } else {
-        console.log(
-          `Error: requestorAddr ${requestorAddr}는 minter가 아닙니다`
-        );
+        console.log(`Error: requestorAddr ${requestorAddr} is not a minter`);
         return;
       }
     } else handleError(3);

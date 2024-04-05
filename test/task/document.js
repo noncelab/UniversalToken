@@ -16,7 +16,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-document-abe51223989d4631b60c3b0a785f5413?pvs=4#b6b1d8822f114100bcb286df59e1ffc2 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-document-abe51223989d4631b60c3b0a785f5413?pvs=4#b6b1d8822f114100bcb286df59e1ffc2)`
   );
 };
 
@@ -57,7 +57,7 @@ const argumentCheck = async () => {
             }
           } else {
             console.log(
-              `Error: requestorAddr ${process.argv[4]}는 controller가 아닙니다`
+              `Error: requestorAddr ${process.argv[4]} is not a controller`
             );
             return;
           }
@@ -92,19 +92,19 @@ const manageDocument = async (ca, code, params) => {
   if (code === "getDocument") {
     // 특정 이름의 문서 조회
     tx = contract.methods.getDocument(
-      web3.utils.toHex(params[0]).padEnd(66, "0")
+      web3.utils.toHex(params[0]).padEnd(66, "0") // documentName
     );
   } else if (code === "setDocument") {
     // 특정 문서 등록/수정
     tx = contract.methods.setDocument(
-      web3.utils.toHex(params[0]).padEnd(66, "0"),
-      params[1],
-      params[2]
+      web3.utils.toHex(params[0]).padEnd(66, "0"), // documentName
+      params[1], // uri
+      params[2] // docHash
     );
   } else if (code === "removeDocument") {
     // 특정 문서 삭제
     tx = contract.methods.removeDocument(
-      web3.utils.toHex(params[0]).padEnd(66, "0")
+      web3.utils.toHex(params[0]).padEnd(66, "0") // documentName
     );
   } else if (code === "getAllDocuments") {
     // 모든 문서
@@ -119,11 +119,11 @@ const manageDocument = async (ca, code, params) => {
 
       if (result[2]) {
         console.log("[Result]");
-        console.log("name:", params[0]);
-        console.log("uri:", result[0]);
-        console.log("docHash:", result[1]);
+        console.log("Name:", params[0]);
+        console.log("URI:", result[0]);
+        console.log("DocHash:", result[1]);
         console.log(
-          "timestamp:",
+          "Timestamp:",
           result[2],
           "(",
           new Date(result[2] * 1000),

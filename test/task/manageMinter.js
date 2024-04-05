@@ -17,7 +17,7 @@ const signer = web3.eth.accounts.privateKeyToAccount(
 
 const handleError = (number) => {
   console.log(
-    `유효하지 않은 인자 [${number}] (https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49 참고)`
+    `Invalid arguments [${number}] (Refer to https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49)`
   );
 };
 
@@ -61,7 +61,7 @@ const argumentCheck = async () => {
           web3.utils.toChecksumAddress(process.argv[4]) ===
             web3.utils.toChecksumAddress(signer.address)
         ) {
-          console.log("Error: 시스템 owner의 minter 권한을 제거할 수 없습니다");
+          console.log("Error: Can not remove owner's minter authority");
           return;
         }
 
@@ -75,7 +75,7 @@ const argumentCheck = async () => {
         if (result)
           targetMinterAddr = web3.utils.toChecksumAddress(process.argv[5]);
         else {
-          console.log("Error: requestorAddr는 minter가 아닙니다");
+          console.log("Error: requestorAddr is not a minter");
           return;
         }
       } else {
