@@ -1,6 +1,6 @@
 /**
  * Minter 관리를 위한 스크립트 파일
- * @brief isMinter, addMinter, removeMinter 함수 호출로 컨트랙트 상호 작용 가능
+ * @dev isMinter, addMinter, removeMinter 함수 호출로 컨트랙트 상호 작용 가능
  * @command node ./test/task/manageMinter.js contractAddr manageFunction [함수별 파라미터]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#e07ebeab6d3e431dbf1447b872489c49
  */
@@ -120,6 +120,8 @@ const manageMinter = async (ca, code, eoa) => {
     const result = await tx.call();
 
     console.log(`Result: ${eoa} is${result ? "" : " NOT"} a minter.`);
+
+    return result;
   } else if (code === "addMinter" || code === "removeMinter") {
     // 트랜잭션 전송
     try {
@@ -133,6 +135,8 @@ const manageMinter = async (ca, code, eoa) => {
         })
         .once("receipt", (result) => {
           console.log("Result:", result);
+
+          return result;
         });
     } catch (e) {
       console.error(e.message);

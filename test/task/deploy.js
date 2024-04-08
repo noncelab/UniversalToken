@@ -1,6 +1,6 @@
 /**
  * 컨트랙트 배포를 위한 스크립트 파일
- * @brief 스크립트 호출로 컨트랙트 배포 가능
+ * @dev 스크립트 호출로 컨트랙트 배포 가능
  * @command node ./test/task/deploy.js requestorAddr name symbol granularity controllerCnt partitionsCnt [controllers] [partitions]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-deploy-a69c656cf24240fe84a42172e18afab4?pvs=4#ce95418216684d33bbae58a39d155cab
  */
@@ -150,6 +150,8 @@ const addMinter = async (ca, newMinter) => {
     })
     .once("receipt", (result) => {
       console.log("Result:", result);
+
+      return result;
     });
 };
 

@@ -1,6 +1,6 @@
 /**
  * Operator 관리를 위한 스크립트 파일
- * @brief isOperator, isOperatorForPartition 함수 호출로 컨트랙트 상호 작용 가능
+ * @dev isOperator, isOperatorForPartition 함수 호출로 컨트랙트 상호 작용 가능
  * @command node ./test/task/manageOperator.js contractAddr manageFunction [함수별 파라미터]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d7cfe39dd6714705b45a4543f540a4ba
  */
@@ -134,6 +134,7 @@ const manageOperator = async (ca, code, params) => {
     const result = await deployTx.call();
 
     console.log("Result:", result);
+    return result;
   }
   // else {
   //   // 트랜잭션 전송

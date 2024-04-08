@@ -1,6 +1,6 @@
 /**
  * Controller 관리를 위한 스크립트 파일
- * @brief controllers, isControllable, setControllers, controllersByPartition, setPartitionControllers 함수 호출로 컨트랙트 상호 작용 가능
+ * @dev controllers, setControllers, controllersByPartition, setPartitionControllers 함수 호출로 컨트랙트 상호 작용 가능
  * @command node ./test/task/manageController.js contractAddr manageFunction [함수별 파라미터]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-b832d0deb6ee4431856bc10f19bf446b?pvs=4#d5ed9a382c0047d6809d82d5fd404629
  */
@@ -32,7 +32,6 @@ const argumentCheck = async () => {
       !web3.utils.isAddress(process.argv[2]) ||
       ![
         "controllers",
-        "isControllable",
         "setControllers",
         "controllersByPartition",
         "setPartitionControllers",
@@ -181,9 +180,6 @@ const manageController = async (ca, code, params) => {
   if (code === "controllers") {
     // 현재 controller 리스트 조회
     tx = contract.methods.controllers();
-  } else if (code === "isControllable") {
-    // 현재 컨트롤 가능한 상태인지 확인
-    tx = contract.methods.isControllable();
   } else if (code === "setControllers") {
     // controller 지정
     tx = contract.methods.setControllers(params[0]); // operators[]
@@ -196,13 +192,13 @@ const manageController = async (ca, code, params) => {
   }
 
   // controller 관리 호출
-  if (
-    ["controllers", "isControllable", "controllersByPartition"].includes(code)
-  ) {
+  if (["controllers", "controllersByPartition"].includes(code)) {
     // 단순 조회
     const result = await tx.call();
 
     console.log("Result:", result);
+
+    return result;
   } else {
     // 트랜잭션 전송
     await tx
@@ -215,6 +211,8 @@ const manageController = async (ca, code, params) => {
       })
       .once("receipt", (result) => {
         console.log("Result:", result);
+
+        return result;
       });
   }
 };

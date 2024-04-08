@@ -1,6 +1,6 @@
 /**
  * 토큰 발행 관리를 위한 스크립트 파일
- * @brief issue, issueByPartition 함수 호출로 컨트랙트 상호 작용 가능
+ * @dev issue, issueByPartition 함수 호출로 컨트랙트 상호 작용 가능
  * @command node ./test/task/tokenIssue.js contractAddr requestorAddr targetTokenHolder value data manageFunction [함수별 파라미터]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-issue-c1d874a3ffb141f39c6fb27ce71dfa68?pvs=4#4a8029c984904fe18925f407e63f1058
  */
@@ -136,7 +136,7 @@ const issueToken = async (ca, code, params) => {
       console.log("TxHash:", txHash);
     })
     .once("receipt", async (result) => {
-      console.log("Result:", result);
+      console.log(result);
 
       // 토큰 발행 후 잔액 및 총량 확인
       await checkBalance(
@@ -154,8 +154,6 @@ const checkBalance = async (ca, manageFunction, tokenHolder, partition) => {
 
   // 토큰 총량 조회
   const contract = new web3.eth.Contract(ABI, ca);
-  let totalSupply = 0;
-  let balanceOfTokenHolder = 0;
 
   if (manageFunction === "issue") {
     // 단순 토큰 발행
@@ -171,6 +169,8 @@ const checkBalance = async (ca, manageFunction, tokenHolder, partition) => {
 
     console.log("Total supply:", supplyResult);
     console.log(`Balance of ${tokenHolder}:`, balanceResult);
+
+    return [supplyResult, balanceResult];
   } else if (manageFunction === "issueByPartition") {
     // 파티션별 토큰 발행
     const supplyResult = await contract.methods
@@ -200,6 +200,8 @@ const checkBalance = async (ca, manageFunction, tokenHolder, partition) => {
         .padEnd(66, "0")}):`,
       balanceResult
     );
+
+    return [supplyResult, balanceResult];
   }
 };
 

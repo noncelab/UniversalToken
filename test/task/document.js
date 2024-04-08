@@ -1,6 +1,6 @@
 /**
  * Document 관리를 위한 스크립트 파일
- * @brief getDocument, setDocument, removeDocument, getAllDocuments 함수 호출로 컨트랙트 상호 작용 가능
+ * @dev getDocument, setDocument, removeDocument, getAllDocuments 함수 호출로 컨트랙트 상호 작용 가능
  * @command node ./test/task/document.js contractAddr manageFunction [함수별 파라미터]
  * @see 관련 문서: https://www.notion.so/noncelab/SC-document-abe51223989d4631b60c3b0a785f5413?pvs=4#b6b1d8822f114100bcb286df59e1ffc2
  */
@@ -132,6 +132,8 @@ const manageDocument = async (ca, code, params) => {
       } else {
         console.log("Result:", result);
       }
+
+      return result;
     } catch (e) {
       // 요청한 이름의 document struct가 없는 경우. Execution reverted
       console.log(e.message);
@@ -150,6 +152,8 @@ const manageDocument = async (ca, code, params) => {
       })
       .once("receipt", (result) => {
         console.log("Result:", result);
+
+        return result;
       });
   }
 };
