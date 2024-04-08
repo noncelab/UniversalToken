@@ -100,6 +100,7 @@ const argumentCheck = async () => {
           "name",
           "symbol",
           "granularity",
+          "totalSupply",
           "isControllable",
           "isIssuable",
           "totalPartitions",
@@ -126,85 +127,88 @@ const checkVariable = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   switch (code) {
     case "name":
-      deployTx = contract.methods.name();
+      tx = contract.methods.name();
       break;
     case "symbol":
-      deployTx = contract.methods.symbol();
+      tx = contract.methods.symbol();
       break;
     case "granularity":
-      deployTx = contract.methods.granularity();
+      tx = contract.methods.granularity();
+      break;
+    case "totalSupply":
+      tx = contract.methods.totalSupply();
       break;
     case "isControllable":
-      deployTx = contract.methods.isControllable();
+      tx = contract.methods.isControllable();
       break;
     case "isIssuable":
-      deployTx = contract.methods.isIssuable();
+      tx = contract.methods.isIssuable();
       break;
     case "balanceOf":
-      deployTx = contract.methods.balanceOf(
+      tx = contract.methods.balanceOf(
         web3.utils.toChecksumAddress(params[0]) // targetTokenHolder
       );
       break;
     case "allowance":
-      deployTx = contract.methods.allowance(
+      tx = contract.methods.allowance(
         web3.utils.toChecksumAddress(params[0]), // targetTokenHolder
         web3.utils.toChecksumAddress(params[1]) // targetTokenSpender
       );
       break;
     case "totalPartitions":
-      deployTx = contract.methods.totalPartitions();
+      tx = contract.methods.totalPartitions();
       break;
     case "totalSupplyByPartition":
-      deployTx = contract.methods.totalSupplyByPartition(
+      tx = contract.methods.totalSupplyByPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0") // partition
       );
       break;
     case "partitionsOf":
-      deployTx = contract.methods.partitionsOf(
+      tx = contract.methods.partitionsOf(
         web3.utils.toChecksumAddress(params[0]) // targetTokenHolder
       );
       break;
     case "balanceOfByPartition":
-      deployTx = contract.methods.balanceOfByPartition(
+      tx = contract.methods.balanceOfByPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0"), // partition
         web3.utils.toChecksumAddress(params[1]) // targetTokenHolder
       );
       break;
     case "allowanceByPartition":
-      deployTx = contract.methods.allowanceByPartition(
+      tx = contract.methods.allowanceByPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0"), // partition
         web3.utils.toChecksumAddress(params[1]), // targetTokenHolder
         web3.utils.toChecksumAddress(params[2]) // targetTokenSpender
       );
       break;
     case "isOperator":
-      deployTx = contract.methods.isOperator(
+      tx = contract.methods.isOperator(
         web3.utils.toChecksumAddress(params[0]), // operator
         web3.utils.toChecksumAddress(params[1]) // targetTokenHolder
       );
       break;
     case "isOperatorForPartition":
-      deployTx = contract.methods.isOperatorForPartition(
+      tx = contract.methods.isOperatorForPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0"), // partition
         web3.utils.toChecksumAddress(params[1]), // operator
         web3.utils.toChecksumAddress(params[2]) // targetTokenHolder
       );
       break;
     case "controllers":
-      deployTx = contract.methods.controllers();
+      tx = contract.methods.controllers();
       break;
     case "controllersByPartition":
-      deployTx = contract.methods.controllersByPartition(
+      tx = contract.methods.controllersByPartition(
         web3.utils.toHex(params[0]).padEnd(66, "0") // partition
       );
       break;
   }
 
-  const result = await deployTx.call();
+  const result = await tx.call();
 
   console.log(`Result (${code}):`, result);
 };
