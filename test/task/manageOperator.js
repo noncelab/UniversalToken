@@ -88,17 +88,17 @@ const manageOperator = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "isOperator") {
     // 특정 tokenHolder의 operator인지 확인
-    deployTx = contract.methods.isOperator(
+    tx = contract.methods.isOperator(
       web3.utils.toChecksumAddress(params[0]), // operator
       web3.utils.toChecksumAddress(params[1]) // tokenHolder
     );
   } else if (code === "isOperatorForPartition") {
     // 특정 파티션 내 tokenHolder의 operator인지 확인
-    deployTx = contract.methods.isOperatorForPartition(
+    tx = contract.methods.isOperatorForPartition(
       params[0], // partition
       web3.utils.toChecksumAddress(params[1]), // operator
       web3.utils.toChecksumAddress(params[2]) // tokenHolder
@@ -106,23 +106,23 @@ const manageOperator = async (ca, code, params) => {
   }
   // else if (code === "authorizeOperator") {
   //   // 특정 주소를 operator로 추가
-  //   deployTx = contract.methods.authorizeOperator(
+  //   tx = contract.methods.authorizeOperator(
   //     web3.utils.toChecksumAddress(params[0]) // operator
   //   );
   // } else if (code === "revokeOperator") {
   //   // 특정 주소의 operator 권한 제거
-  //   deployTx = contract.methods.revokeOperator(
+  //   tx = contract.methods.revokeOperator(
   //     web3.utils.toChecksumAddress(params[0]) // operator
   //   );
   // } else if (code === "authorizeOperatorByPartition") {
   //   // 특정 주소를 특정 파티션의 operator로 추가
-  //   deployTx = contract.methods.authorizeOperatorByPartition(
+  //   tx = contract.methods.authorizeOperatorByPartition(
   //     params[0], // partition
   //     web3.utils.toChecksumAddress(params[1]) // operator
   //   );
   // } else if (code === "revokeOperatorByPartition") {
   //   // 특정 주소를 특정 파티션의 operator에서 권한 제거
-  //   deployTx = contract.methods.revokeOperatorByPartition(
+  //   tx = contract.methods.revokeOperatorByPartition(
   //     params[0], // partition
   //     web3.utils.toChecksumAddress(params[1]) // operator
   //   );
@@ -131,17 +131,17 @@ const manageOperator = async (ca, code, params) => {
   // operator 관리 호출
   if (["isOperator", "isOperatorForPartition"].includes(code)) {
     // 단순 조회
-    const result = await deployTx.call();
+    const result = await tx.call();
 
     console.log("Result:", result);
     return result;
   }
   // else {
   //   // 트랜잭션 전송
-  //   await deployTx
+  //   await tx
   //     .send({
   //       from: signer.address,
-  //       gas: await deployTx.estimateGas({ from: signer.address }),
+  //       gas: await tx.estimateGas({ from: signer.address }),
   //     })
   //     .once("transactionHash", (txHash) => {
   //       console.log("TxHash:", txHash);

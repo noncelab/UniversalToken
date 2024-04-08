@@ -112,20 +112,20 @@ const manageDefaultPartition = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "getDefaultPartitions") {
     // 현재 기본 파티션 리스트 조회
-    deployTx = contract.methods.getDefaultPartitions();
+    tx = contract.methods.getDefaultPartitions();
   } else if (code === "setDefaultPartitions") {
     // 기본 파티션에 특정 내용 적용
-    deployTx = contract.methods.setDefaultPartitions(params);
+    tx = contract.methods.setDefaultPartitions(params);
   }
 
   // defaultPartition 관리 호출
   if (code === "getDefaultPartitions") {
     // 단순 조회
-    const result = await deployTx.call();
+    const result = await tx.call();
     let tempResult = [];
 
     if (result && result.length > 0) {
@@ -139,10 +139,10 @@ const manageDefaultPartition = async (ca, code, params) => {
     return tempResult;
   } else {
     // 트랜잭션 전송
-    await deployTx
+    await tx
       .send({
         from: signer.address,
-        gas: await deployTx.estimateGas({ from: signer.address }),
+        gas: await tx.estimateGas({ from: signer.address }),
       })
       .once("transactionHash", (txHash) => {
         console.log("TxHash:", txHash);

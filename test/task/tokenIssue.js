@@ -107,18 +107,18 @@ const issueToken = async (ca, code, params) => {
   const contract = new web3.eth.Contract(ABI, ca);
 
   // 컨트랙트 전달 값 설정
-  let deployTx = "";
+  let tx = "";
 
   if (code === "issue") {
     // 단순 토큰 발행
-    deployTx = contract.methods.issue(
+    tx = contract.methods.issue(
       params.targetTokenHolder,
       params.value,
       web3.utils.utf8ToHex(params.data)
     );
   } else {
     // 파티션별 토큰 발행
-    deployTx = contract.methods.issueByPartition(
+    tx = contract.methods.issueByPartition(
       web3.utils.toHex(params.partition).padEnd(66, "0"),
       params.targetTokenHolder,
       params.value,
@@ -127,10 +127,10 @@ const issueToken = async (ca, code, params) => {
   }
 
   // 트랜잭션 전송
-  await deployTx
+  await tx
     .send({
       from: signer.address,
-      gas: await deployTx.estimateGas({ from: signer.address }),
+      gas: await tx.estimateGas({ from: signer.address }),
     })
     .once("transactionHash", (txHash) => {
       console.log("TxHash:", txHash);
