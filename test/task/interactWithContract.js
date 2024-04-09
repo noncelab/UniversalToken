@@ -8,6 +8,7 @@
 
 const readLine = require("readline");
 const Web3 = require("web3");
+const { callFunctions, sendFunctions } = require("./functionConstant");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
 require("dotenv").config();
 
@@ -15,46 +16,6 @@ const readInput = readLine.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-
-const callFunctions = [
-  "name",
-  "symbol",
-  "granularity",
-  "isControllable",
-  "isIssuable",
-  "balanceOf",
-  "allowance",
-  "totalPartitions",
-  "totalSupply",
-  "totalSupplyByPartition",
-  "partitionsOf",
-  "balanceOfByPartition",
-  "allowanceByPartition",
-  "isOperator",
-  "isOperatorForPartition",
-  "controllers",
-  "controllersByPartition",
-  "isMinter",
-];
-
-const sendFunctions = [
-  "authorizeOperator",
-  "revokeOperator",
-  "authorizeOperatorByPartition",
-  "revokeOperatorByPartition",
-  "approve",
-  "approveByPartition",
-  "transfer",
-  "transferWithData",
-  "transferFrom",
-  "transferFromWithData",
-  "transferByPartition",
-  "operatorTransferByPartition",
-  "redeem",
-  "redeemFrom",
-  "redeemByPartition",
-  "operatorRedeemByPartition",
-];
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL));
 let contract;
