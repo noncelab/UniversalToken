@@ -1,4 +1,4 @@
-export const callFunctions = [
+const callFunctions = [
   "name",
   "symbol",
   "granularity",
@@ -19,7 +19,7 @@ export const callFunctions = [
   "isMinter",
 ];
 
-export const sendFunctions = [
+const sendFunctions = [
   "authorizeOperator",
   "revokeOperator",
   "authorizeOperatorByPartition",
@@ -37,3 +37,5 @@ export const sendFunctions = [
   "redeemByPartition",
   "operatorRedeemByPartition",
 ];
+
+module.exports = { callFunctions, sendFunctions };
