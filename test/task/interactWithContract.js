@@ -18,6 +18,8 @@ const bip39 = require("bip39");
 const ethers = require("ethers");
 require("dotenv").config();
 
+let dataTypeForOperatorTransferByPartition = { type: null, value: null };
+
 const readInput = readLine.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -44,37 +46,58 @@ const handleError = (number, type) => {
 const functionCheck = () => {
   let input;
 
+  // 함수명이 operatorTransferByPartition인 경우에는 선택적으로 입력 가능한 데이터 타입이 2가지(data, operatorData) 있습니다.
+  // 입력을 하지 않을 수도 있지만, 한 가지만 입력하는 경우에는 이를 구분하기 위해 추가적으로 입력을 받아 처리합니다.
   readInput.question(
-    "Please enter contract address and a function name in order (Split by space): ",
+    `Please enter contract address and a function name in order (Split by space)\n(* If the function name is "operatorTransferByPartition" and there is only one data type(either data or operatorData), just input it regardless of the order and input what it is in the command that comes right after this)\n: `,
     (name) => {
-      input = name.trim().split(" ");
+      if (name) {
+        input = name.trim().split(" ");
 
-      // 컨트랙트 주소와 함수명을 입력하고, 컨트랙트 주소가 올바른 주소 형식인 경우
-      if (
-        input.length === 2 &&
-        web3.utils.isAddress(web3.utils.toChecksumAddress(input[0]))
-      ) {
-        // 컨트랙트 내에 포함되어 있는 올바른 함수명을 입력한 경우
-        if ([...callFunctions, ...sendFunctions].includes(input[1])) {
-          if (callFunctionsForStepPass.includes(input[1])) {
-            // 파라미터가 필요 없는 함수인 경우
-            connectArgument(input);
+        // 컨트랙트 주소와 함수명을 입력하고, 컨트랙트 주소가 올바른 주소 형식인 경우
+        if (
+          input.length === 2 &&
+          web3.utils.isAddress(web3.utils.toChecksumAddress(input[0]))
+        ) {
+          // 컨트랙트 내에 포함되어 있는 올바른 함수명을 입력한 경우
+          if ([...callFunctions, ...sendFunctions].includes(input[1])) {
+            if (callFunctionsForStepPass.includes(input[1])) {
+              // 파라미터가 필요 없는 함수인 경우
+              connectArgument(input);
+              readInput.close();
+            } else inputArgument(input);
+          } else {
+            console.log(
+              "Error: Function name is invalid. Please check the function name again."
+            );
             readInput.close();
-          } else inputArgument(input);
+          }
         } else {
           console.log(
-            "Error: Function name is invalid. Please check the function name again."
+            "Error: Either contract address or function name is invalid. Please check them again."
           );
           readInput.close();
         }
       } else {
         console.log(
-          "Error: Either contract address or function name is invalid. Please check them again."
+          "Error: No input is entered. Please check the input parameters again."
         );
         readInput.close();
       }
     }
   );
+};
+
+// 인자 연결 중복 함수 재사용
+const handleConnectArgument = (input, argumentInput) => {
+  connectArgument(input, argumentInput);
+
+  // sendFunction의 경우 니모닉 입력을 추가로 받아야 하기 때문에 callFunction인 경우에만 readInput close 처리
+  if (
+    !sendFunctions.includes(input[1]) ||
+    !sendFunctionArgumentCheck(input, argumentInput)
+  )
+    readInput.close();
 };
 
 /**
@@ -87,16 +110,39 @@ const inputArgument = async (input) => {
   readInput.question(
     "\nPlease enter parameters for corresponding function in order (Split by space): ",
     (parameters) => {
-      argumentInput =
-        parameters.trim().length > 0 ? parameters.trim().split(" ") : null;
-      connectArgument(input, argumentInput);
+      if (parameters) {
+        argumentInput =
+          parameters.trim().length > 0 ? parameters.trim().split(" ") : null;
 
-      // sendFunction의 경우 니모닉 입력을 추가로 받아야 하기 때문에 callFunction인 경우에만 readInput close 처리
-      if (
-        !sendFunctions.includes(input[1]) ||
-        !sendFunctionArgumentCheck(input, argumentInput)
-      )
+        // operatorTransferByPartition 선택 후 data 또는 operatorData 둘 중 하나만 입력한 경우
+        if (
+          input[1] === "operatorTransferByPartition" &&
+          argumentInput[4] &&
+          !argumentInput[5]
+        ) {
+          readInput.question(
+            "\nPlease enter dataType (data, operatorData): ",
+            (dataType) => {
+              if (["data", "operatorData"].includes(dataType)) {
+                dataTypeForOperatorTransferByPartition = dataType;
+                handleConnectArgument(input, argumentInput);
+              } else {
+                console.log(
+                  "Error: DataType is invalid. Please check the inputtable dataType again."
+                );
+
+                readInput.close();
+                return;
+              }
+            }
+          );
+        } else handleConnectArgument(input, argumentInput);
+      } else {
+        console.log(
+          "Error: No input is entered. Please check the input parameters again."
+        );
         readInput.close();
+      }
     }
   );
 };
@@ -199,14 +245,19 @@ const connectArgument = (input, parameters) => {
       getMnemonic(parameters, transferByPartition);
       break;
     case "operatorTransferByPartition":
+      getMnemonic(parameters, operatorTransferByPartition);
       break;
     case "redeem":
+      getMnemonic(parameters, redeem);
       break;
     case "redeemByPartition":
+      getMnemonic(parameters, redeemByPartition);
       break;
     case "redeemFrom":
+      getMnemonic(parameters, redeemFrom);
       break;
     case "operatorRedeemByPartition":
+      getMnemonic(parameters, operatorRedeemByPartition);
       break;
   }
 };
@@ -973,10 +1024,11 @@ const transferFromWithData = async (signer, params) => {
  * @param {string} data - (Optional) 데이터
  */
 const transferByPartition = async (signer, params) => {
-  const toAddress = web3.utils.toChecksumAddress(params[1]);
-
   // 토큰 잔액 조회
-  const balance = await contract.methods.balanceOf(signer.address).call();
+  const partition = web3.utils.toHex(params[0]).padEnd(66, "0");
+  const balance = await contract.methods
+    .balanceOfByPartition(partition, signer.address)
+    .call();
 
   if (Number(balance) < Number(params[2]) || Number(balance) <= 0) {
     console.log(
@@ -992,13 +1044,258 @@ const transferByPartition = async (signer, params) => {
   if (params[3]) tempData = params[3];
 
   let tx = contract.methods.transferByPartition(
-    web3.utils.toHex(params[0]).padEnd(66, "0"),
-    toAddress,
+    partition,
+    web3.utils.toChecksumAddress(params[1]),
     Number(params[2]),
     web3.utils.utf8ToHex(tempData)
   );
 
   sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 operatorTransferByPartition 함수를 호출하여 파티션별 보내는 대상으로부터
+ *      받을 대상으로 토큰 개수만큼 토큰 전송 (필요시 데이터 추가)
+ * @param {string} partition - 파티션
+ * @param {address} from - 보내는 대상 대상의 주소
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - (Optional) 데이터
+ * @param {string} operatorData - (Optional) operator 데이터
+ */
+const operatorTransferByPartition = async (signer, params) => {
+  // 토큰 잔액 조회
+  const partition = web3.utils.toHex(params[0]).padEnd(66, "0");
+  const fromAddress = web3.utils.toChecksumAddress(params[1]);
+  const toAddress = web3.utils.toChecksumAddress(params[2]);
+  const balance = await contract.methods
+    .balanceOfByPartition(partition, fromAddress)
+    .call();
+
+  if (Number(balance) < Number(params[3]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to send tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  // 토큰 승인 개수 조회
+  const allowance = await contract.methods
+    .allowanceByPartition(partition, signer.address, fromAddress)
+    .call();
+
+  // operator 여부 조회
+  const isOperator = await contract.methods
+    .isOperatorForPartition(partition, signer.address, fromAddress)
+    .call();
+
+  if (
+    isOperator ||
+    (Number(allowance) >= Number(balance) && Number(allowance) !== 0)
+  ) {
+    let tempData = "";
+    let tempOperatorData = "";
+
+    // 데이터를 추가한 경우 값 추가
+    if (params[4]) tempData = params[4];
+    if (params[5]) tempOperatorData = params[5];
+
+    // 데이터를 둘 중에 하나만 입력한 경우 별도로 값 추가
+    let dataType = dataTypeForOperatorTransferByPartition;
+
+    if (dataTypeForOperatorTransferByPartition.type) {
+      if (dataType.type === "data") tempData = params[4];
+      else tempData = params[5];
+    }
+
+    let tx = contract.methods.operatorTransferByPartition(
+      partition,
+      fromAddress,
+      toAddress,
+      Number(params[3]),
+      web3.utils.utf8ToHex(tempData),
+      web3.utils.utf8ToHex(tempOperatorData)
+    );
+
+    sendTransaction(signer, tx);
+  } else
+    console.log("Error: Allowance is not enough to send tokens or it is zero");
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 redeem 함수를 호출하여 토큰 개수만큼 토큰을 반환(상환)합니다. (필요시 데이터 추가)
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - (Optional) 데이터
+ */
+const redeem = async (signer, params) => {
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(signer.address).call();
+
+  if (Number(balance) < Number(params[0]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to redeem tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  let tempData = "";
+
+  // 데이터를 추가한 경우 값 추가
+  if (params[1]) tempData = params[1];
+
+  let tx = contract.methods.redeem(
+    Number(params[0]),
+    web3.utils.utf8ToHex(tempData)
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 redeemByPartition 함수를 호출하여 파티션별 토큰 개수만큼 토큰을
+ *      반환(상환)합니다. (필요시 데이터 추가)
+ * @param {string} partition - 파티션
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - (Optional) 데이터
+ */
+const redeemByPartition = async (signer, params) => {
+  // 토큰 잔액 조회
+  const partition = web3.utils.toHex(params[0]).padEnd(66, "0");
+  const balance = await contract.methods
+    .balanceOfByPartition(partition, signer.address)
+    .call();
+
+  if (Number(balance) < Number(params[1]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to redeem tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  let tempData = "";
+
+  // 데이터를 추가한 경우 값 추가
+  if (params[2]) tempData = params[2];
+
+  let tx = contract.methods.redeemByPartition(
+    partition,
+    Number(params[1]),
+    web3.utils.utf8ToHex(tempData)
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 redeemFrom 함수를 호출하여 회수 대상으로부터 토큰 개수만큼 토큰을
+ *      반환(상환)합니다. (필요시 데이터 추가)
+ * @param {address} from - 회수 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - (Optional) 데이터
+ */
+const redeemFrom = async (signer, params) => {
+  // 토큰 잔액 조회
+  const fromAddress = web3.utils.toChecksumAddress(params[0]);
+  const balance = await contract.methods.balanceOf(fromAddress).call();
+
+  if (Number(balance) < Number(params[1]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to redeem tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  // 토큰 승인 개수 조회
+  const allowance = await contract.methods
+    .allowance(signer.address, fromAddress)
+    .call();
+
+  // operator 여부 조회
+  const isOperator = await contract.methods
+    .isOperator(signer.address, fromAddress)
+    .call();
+
+  if (
+    isOperator ||
+    (Number(allowance) >= Number(balance) && Number(allowance) !== 0)
+  ) {
+    let tempData = "";
+
+    // 데이터를 추가한 경우 값 추가
+    if (params[2]) tempData = params[2];
+
+    let tx = contract.methods.redeemFrom(
+      fromAddress,
+      Number(params[1]),
+      web3.utils.utf8ToHex(tempData)
+    );
+
+    sendTransaction(signer, tx);
+  } else
+    console.log(
+      "Error: Allowance is not enough to redeem tokens or it is zero"
+    );
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 operatorRedeemByPartition 함수를 호출하여 파티션별 회수 대상으로부터
+ *      토큰 개수만큼 토큰을 반환(상환)합니다. (필요시 데이터 추가)
+ * @param {string} partition - 파티션
+ * @param {address} tokenHolder - 회수 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} operatorData - (Optional) 데이터
+ */
+const operatorRedeemByPartition = async (signer, params) => {
+  // 토큰 잔액 조회
+  const partition = web3.utils.toHex(params[0]).padEnd(66, "0");
+  const fromAddress = web3.utils.toChecksumAddress(params[1]);
+  const balance = await contract.methods
+    .balanceOfByPartition(partition, fromAddress)
+    .call();
+
+  if (Number(balance) < Number(params[2]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to redeem tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  // 토큰 승인 개수 조회
+  const allowance = await contract.methods
+    .allowanceByPartition(partition, signer.address, fromAddress)
+    .call();
+
+  // operator 여부 조회
+  const isOperator = await contract.methods
+    .isOperatorForPartition(partition, signer.address, fromAddress)
+    .call();
+
+  if (
+    isOperator ||
+    (Number(allowance) >= Number(balance) && Number(allowance) !== 0)
+  ) {
+    let tempData = "";
+
+    // 데이터를 추가한 경우 값 추가
+    if (params[3]) tempData = params[3];
+
+    let tx = contract.methods.operatorRedeemByPartition(
+      partition,
+      fromAddress,
+      Number(params[2]),
+      web3.utils.utf8ToHex(tempData)
+    );
+
+    sendTransaction(signer, tx);
+  } else
+    console.log(
+      "Error: Allowance is not enough to redeem tokens or it is zero"
+    );
 };
 
 const init = () => {
