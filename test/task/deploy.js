@@ -172,7 +172,7 @@ const test = async () => {
     if (result) {
       console.log("Finish deployment\n", result);
 
-      // console.log("3. Add requestor as minter...");
+      console.log("3. Add requestor as minter...");
       await addMinter(result.CA, result.Requestor);
     }
   }

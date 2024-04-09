@@ -58,8 +58,7 @@ const argumentCheck = async () => {
         // manageFunction이 removeMinter일 때 targetMinterAddr이 시스템 owner가 아닌지 확인
         if (
           manageFunction === "removeMinter" &&
-          web3.utils.toChecksumAddress(process.argv[4]) ===
-            web3.utils.toChecksumAddress(signer.address)
+          web3.utils.toChecksumAddress(process.argv[4]) === signer.address
         ) {
           console.log("Error: Can not remove owner's minter authority");
           return;
@@ -142,9 +141,9 @@ const manageMinter = async (ca, code, eoa) => {
       console.error(e.message);
 
       if (code === "addMinter")
-        console.log("Check if the address is already the minter.");
+        console.log("Error: Check if the address is already the minter");
       else if (code === "removeMinter")
-        console.log("Check if the address is not a minter.");
+        console.log("Error: Check if the address is not a minter");
     }
   }
 };

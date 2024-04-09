@@ -6,10 +6,16 @@
  * @see Send 관련 문서: https://www.notion.so/noncelab/SC-sending-txs-5b5d6a1cd3db4f7b9ee17f72c5f35af2?pvs=4#cb545e5cd8964c0bb6c63ce449433ab7
  */
 
+const {
+  callFunctions,
+  sendFunctions,
+  callFunctionsForStepPass,
+} = require("./functionConstant");
 const readLine = require("readline");
 const Web3 = require("web3");
-const { callFunctions, sendFunctions } = require("./functionConstant");
 const ABI = require("../../build/contracts/ERC1400.json").abi;
+const bip39 = require("bip39");
+const ethers = require("ethers");
 require("dotenv").config();
 
 const readInput = readLine.createInterface({
@@ -50,31 +56,20 @@ const functionCheck = () => {
       ) {
         // 컨트랙트 내에 포함되어 있는 올바른 함수명을 입력한 경우
         if ([...callFunctions, ...sendFunctions].includes(input[1])) {
-          if (
-            [
-              "name",
-              "symbol",
-              "granularity",
-              "isControllable",
-              "isIssuable",
-              "totalPartitions",
-              "controllers",
-              "totalSupply",
-            ].includes(input[1])
-          ) {
+          if (callFunctionsForStepPass.includes(input[1])) {
             // 파라미터가 필요 없는 함수인 경우
             connectArgument(input);
             readInput.close();
           } else inputArgument(input);
         } else {
           console.log(
-            "Function name is invalid. Please check the function name again."
+            "Error: Function name is invalid. Please check the function name again."
           );
           readInput.close();
         }
       } else {
         console.log(
-          "Either contract address or function name is invalid. Please check them again."
+          "Error: Either contract address or function name is invalid. Please check them again."
         );
         readInput.close();
       }
@@ -96,7 +91,12 @@ const inputArgument = async (input) => {
         parameters.trim().length > 0 ? parameters.trim().split(" ") : null;
       connectArgument(input, argumentInput);
 
-      readInput.close();
+      // sendFunction의 경우 니모닉 입력을 추가로 받아야 하기 때문에 callFunction인 경우에만 readInput close 처리
+      if (
+        !sendFunctions.includes(input[1]) ||
+        !sendFunctionArgumentCheck(input, argumentInput)
+      )
+        readInput.close();
     }
   );
 };
@@ -166,26 +166,37 @@ const connectArgument = (input, parameters) => {
 
     // Send functions
     case "authorizeOperator":
+      getMnemonic(parameters, authorizeOperator);
       break;
     case "revokeOperator":
+      getMnemonic(parameters, revokeOperator);
       break;
     case "authorizeOperatorByPartition":
+      getMnemonic(parameters, authorizeOperatorByPartition);
       break;
     case "revokeOperatorByPartition":
+      getMnemonic(parameters, revokeOperatorByPartition);
       break;
     case "approve":
+      getMnemonic(parameters, approve);
       break;
     case "approveByPartition":
+      getMnemonic(parameters, approveByPartition);
       break;
     case "transfer":
+      getMnemonic(parameters, transfer);
       break;
     case "transferWithData":
+      getMnemonic(parameters, transferWithData);
       break;
     case "transferFrom":
+      getMnemonic(parameters, transferFrom);
       break;
     case "transferFromWithData":
+      getMnemonic(parameters, transferFromWithData);
       break;
     case "transferByPartition":
+      getMnemonic(parameters, transferByPartition);
       break;
     case "operatorTransferByPartition":
       break;
@@ -411,7 +422,8 @@ const isOperator = async (params) => {
 };
 
 /**
- * @dev ERC-1400 컨트랙트의 isOperatorForPartition 함수를 호출하여 파티션별 제어 권한자가 조회 대상의 operator인지 조회합니다.
+ * @dev ERC-1400 컨트랙트의 isOperatorForPartition 함수를 호출하여 파티션별 제어 권한자가 조회 대상의
+ *      operator인지 조회합니다.
  * @param {string} partition - 파티션
  * @param {address} operator - 제어 권한자의 주소
  * @param {address} tokenHolder - 조회 대상의 주소
@@ -538,14 +550,455 @@ const allowanceByPartition = async (params) => {
 // ####################################################
 
 /**
+ * @dev Send 함수별 인자의 개수와 형태가 올바른지 사전 검증합니다.
+ */
+const sendFunctionArgumentCheck = (input, params) => {
+  let functionName = input[1];
+
+  if (["authorizeOperator", "revokeOperator"].includes(functionName)) {
+    if (params && params.length === 1 && web3.utils.isAddress(params[0]))
+      return true;
+    else handleError(10, "send");
+  } else if (
+    ["authorizeOperatorByPartition", "revokeOperatorByPartition"].includes(
+      functionName
+    )
+  ) {
+    if (
+      params &&
+      params.length === 2 &&
+      params[0].length > 0 &&
+      web3.utils.isAddress(params[1])
+    )
+      return true;
+    else handleError(11, "send");
+  } else if (["approve", "transfer"].includes(functionName)) {
+    if (
+      params &&
+      params.length === 2 &&
+      web3.utils.isAddress(params[0]) &&
+      !isNaN(params[1])
+    )
+      return true;
+    else handleError(12, "send");
+  } else if (functionName === "approveByPartition") {
+    if (
+      params &&
+      params.length === 3 &&
+      params[0].length > 0 &&
+      web3.utils.isAddress(params[1]) &&
+      !isNaN(params[2])
+    )
+      return true;
+    else handleError(13, "send");
+  } else if (functionName === "transferWithData") {
+    if (
+      params &&
+      params.length === 3 &&
+      web3.utils.isAddress(params[0]) &&
+      !isNaN(params[1]) &&
+      params[2].length > 0
+    )
+      return true;
+    else handleError(14, "send");
+  } else if (functionName === "transferFrom") {
+    if (
+      params &&
+      params.length === 3 &&
+      web3.utils.isAddress(params[0]) &&
+      web3.utils.isAddress(params[1]) &&
+      !isNaN(params[2])
+    )
+      return true;
+    else handleError(15, "send");
+  } else if (functionName === "transferFromWithData") {
+    if (
+      params &&
+      params.length === 4 &&
+      web3.utils.isAddress(params[0]) &&
+      web3.utils.isAddress(params[1]) &&
+      !isNaN(params[2]) &&
+      params[3].length > 0
+    )
+      return true;
+    else handleError(16, "send");
+  } else if (functionName === "transferByPartition") {
+    if (
+      params &&
+      params.length >= 3 &&
+      params[0].length > 0 &&
+      web3.utils.isAddress(params[1]) &&
+      !isNaN(params[2])
+    )
+      return true;
+    else handleError(17, "send");
+  } else if (functionName === "operatorTransferByPartition") {
+    if (
+      params &&
+      params.length >= 4 &&
+      params[0].length > 0 &&
+      web3.utils.isAddress(params[1]) &&
+      web3.utils.isAddress(params[2]) &&
+      !isNaN(params[3])
+    )
+      return true;
+    else handleError(18, "send");
+  } else if (functionName === "redeem") {
+    if (params && params.length >= 1 && !isNaN(params[0])) return true;
+    else handleError(19, "send");
+  } else if (functionName === "redeemByPartition") {
+    if (
+      params &&
+      params.length >= 2 &&
+      params[0].length > 0 &&
+      !isNaN(params[1])
+    )
+      return true;
+    else handleError(20, "send");
+  } else if (functionName === "redeemFrom") {
+    if (
+      params &&
+      params.length >= 2 &&
+      web3.utils.isAddress(params[0]) &&
+      !isNaN(params[1])
+    )
+      return true;
+    else handleError(21, "send");
+  } else if (functionName === "operatorRedeemByPartition") {
+    if (
+      params &&
+      params.length >= 3 &&
+      params[0].length > 0 &&
+      web3.utils.isAddress(params[1]) &&
+      !isNaN(params[2])
+    )
+      return true;
+    else handleError(22, "send");
+  }
+
+  return false;
+};
+
+/**
  * @dev 컨트랙트로의 트랜잭션 전송을 위해서는 요청자의 서명이 필요합니다. 이를 위해 요청자의 니모닉을 입력 받습니다.
  * @param {string} mnemonic - 니모닉
+ * @return {function} Callback function with signer object
  */
-const getMnemonic = () => {
-  readInput.question("Please enter your mnemonic to process: ", (mnemonic) => {
-    console.log("mnemonic", mnemonic);
-    readInput.close();
-  });
+const getMnemonic = (params, callback) => {
+  readInput.question(
+    "\nPlease enter your mnemonic to process (Split by space): ",
+    (mnemonic) => {
+      let tempMnemonic = mnemonic.trim().split(" ");
+      let result = null;
+
+      if (tempMnemonic.length > 0 && bip39.validateMnemonic(mnemonic.trim())) {
+        const wallet = ethers.Wallet.fromPhrase(mnemonic.trim());
+        const signer = web3.eth.accounts.privateKeyToAccount(wallet.privateKey);
+
+        web3.eth.accounts.wallet.add(signer);
+        callback(signer, params);
+      } else {
+        console.log(
+          "Error: Invalid mnemonic. Please check your mnemonic again."
+        );
+        result = false;
+      }
+
+      readInput.close();
+
+      return result;
+    }
+  );
+};
+
+/**
+ * @dev 블록체인 네트워크로 트랜잭션을 전송하고 결과를 반환합니다.
+ * @param {object} tx - Transaction object
+ * @return {object} Transaction receipt
+ */
+const sendTransaction = async (signer, tx) => {
+  await tx
+    .send({
+      from: signer.address,
+      gas: await tx.estimateGas({ from: signer.address }),
+    })
+    .once("transactionHash", (txHash) => {
+      console.log("TxHash:", txHash);
+    })
+    .once("receipt", (result) => {
+      console.log("Result:", result);
+
+      return result;
+    });
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 authorizeOperator 함수를 호출하여 제어 권한자에 대한 operator 권한을 부여합니다.
+ * @param {address} operator - 제어 권한자의 주소
+ */
+const authorizeOperator = async (signer, params) => {
+  const tx = contract.methods.authorizeOperator(params[0]);
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 revokeOperator 함수를 호출하여 제어 권한자에 대한 operator 권한을 해제합니다.
+ * @param {address} operator - 제어 권한자의 주소
+ */
+const revokeOperator = async (signer, params) => {
+  const tx = contract.methods.revokeOperator(params[0]);
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 authorizeOperatorByPartition 함수를 호출하여 파티션별 제어 권한자에 대한
+ *      operator 권한을 부여합니다.
+ * @param {string} partition - 파티션
+ * @param {address} operator - 제어 권한자의 주소
+ */
+const authorizeOperatorByPartition = async (signer, params) => {
+  const tx = contract.methods.authorizeOperatorByPartition(
+    web3.utils.toHex(params[0]).padEnd(66, "0"),
+    web3.utils.toChecksumAddress(params[1])
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 revokeOperatorByPartition 함수를 호출하여 파티션별 제어 권한자에 대한
+ *      operator 권한을 해제합니다.
+ * @param {string} partition - 파티션
+ * @param {address} operator - 제어 권한자의 주소
+ */
+const revokeOperatorByPartition = async (signer, params) => {
+  const tx = contract.methods.revokeOperatorByPartition(
+    web3.utils.toHex(params[0]).padEnd(66, "0"),
+    web3.utils.toChecksumAddress(params[1])
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 approve 함수를 호출하여 사용 대상에게 토큰 개수만큼 제어할 수 있도록 승인합니다.
+ * @param {address} spender - 사용 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ */
+const approve = async (signer, params) => {
+  const tx = contract.methods.approve(
+    web3.utils.toChecksumAddress(params[0]),
+    Number(params[1])
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 approveByPartition 함수를 호출하여 파티션별 사용 대상에게 토큰 개수만큼
+ *      제어할 수 있도록 승인합니다.
+ * @param {string} partition - 파티션
+ * @param {address} spender - 사용 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ */
+const approveByPartition = async (signer, params) => {
+  const tx = contract.methods.approveByPartition(
+    web3.utils.toHex(params[0]).padEnd(66, "0"),
+    web3.utils.toChecksumAddress(params[1]),
+    Number(params[2])
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 transfer 함수를 호출하여 받을 대상에게 토큰 개수만큼 토큰을 전송합니다.
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ */
+const transfer = async (signer, params) => {
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(signer.address).call();
+
+  if (balance) {
+    if (Number(balance) < Number(params[1]) || Number(balance) <= 0) {
+      console.log(
+        "Error: Balance is not enough to send tokens or it is below zero"
+      );
+
+      return;
+    }
+
+    const tx = contract.methods.transfer(
+      web3.utils.toChecksumAddress(params[0]),
+      Number(params[1])
+    );
+
+    sendTransaction(signer, tx);
+  }
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 transferWithData 함수를 호출하여 받을 대상에게 토큰 개수만큼 토큰을
+ *      전송합니다. (데이터 추가)
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - 데이터
+ */
+const transferWithData = async (signer, params) => {
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(signer.address).call();
+
+  if (Number(balance) < Number(params[1]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to send tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  let tx = contract.methods.transferWithData(
+    web3.utils.toChecksumAddress(params[0]),
+    Number(params[1]),
+    web3.utils.utf8ToHex(params[2])
+  );
+
+  sendTransaction(signer, tx);
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 transferFrom 함수를 호출하여 보내는 대상으로부터 받을 대상으로 토큰 개수만큼
+ *      토큰을 전송합니다.
+ * @param {address} from - 보내는 대상의 주소
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ */
+const transferFrom = async (signer, params) => {
+  const fromAddress = web3.utils.toChecksumAddress(params[0]);
+  const toAddress = web3.utils.toChecksumAddress(params[1]);
+
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(fromAddress).call();
+
+  if (Number(balance) < Number(params[2]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to send tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  // 토큰 승인 개수 조회
+  const allowance = await contract.methods
+    .allowance(signer.address, fromAddress)
+    .call();
+
+  // operator 여부 조회
+  const isOperator = await contract.methods
+    .isOperator(signer.address, fromAddress)
+    .call();
+
+  if (
+    isOperator ||
+    (Number(allowance) >= Number(balance) && Number(allowance) !== 0)
+  ) {
+    let tx = contract.methods.transferFrom(
+      fromAddress,
+      toAddress,
+      Number(params[2])
+    );
+
+    sendTransaction(signer, tx);
+  } else
+    console.log("Error: Allowance is not enough to send tokens or it is zero");
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 transferFromWithData 함수를 호출하여 보내는 대상으로부터 받을 대상으로
+ *      토큰 개수만큼 토큰을 전송합니다. (데이터 추가)
+ * @param {address} from - 보내는 대상의 주소
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - 데이터
+ */
+const transferFromWithData = async (signer, params) => {
+  const fromAddress = web3.utils.toChecksumAddress(params[0]);
+  const toAddress = web3.utils.toChecksumAddress(params[1]);
+
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(fromAddress).call();
+
+  if (Number(balance) < Number(params[2]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to send tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  // 토큰 승인 개수 조회
+  const allowance = await contract.methods
+    .allowance(signer.address, fromAddress)
+    .call();
+
+  // operator 여부 조회
+  const isOperator = await contract.methods
+    .isOperator(signer.address, fromAddress)
+    .call();
+
+  if (
+    isOperator ||
+    (Number(allowance) >= Number(balance) && Number(allowance) !== 0)
+  ) {
+    let tx = contract.methods.transferFromWithData(
+      fromAddress,
+      toAddress,
+      Number(params[2]),
+      web3.utils.utf8ToHex(params[3])
+    );
+
+    sendTransaction(signer, tx);
+  } else
+    console.log("Error: Allowance is not enough to send tokens or it is zero");
+};
+
+/**
+ * @dev ERC-1400 컨트랙트의 transferByPartition 함수를 호출하여 파티션별 받을 대상에게 토큰 개수만큼
+ *      토큰을 전송합니다. (필요시 데이터 추가)
+ * @param {string} partition - 파티션
+ * @param {address} to - 받을 대상의 주소
+ * @param {uint256} value - 토큰 개수
+ * @param {string} data - (Optional) 데이터
+ */
+const transferByPartition = async (signer, params) => {
+  const toAddress = web3.utils.toChecksumAddress(params[1]);
+
+  // 토큰 잔액 조회
+  const balance = await contract.methods.balanceOf(signer.address).call();
+
+  if (Number(balance) < Number(params[2]) || Number(balance) <= 0) {
+    console.log(
+      "Error: Balance is not enough to send tokens or it is below zero"
+    );
+
+    return;
+  }
+
+  let tempData = "";
+
+  // 데이터를 추가한 경우 값 추가
+  if (params[3]) tempData = params[3];
+
+  let tx = contract.methods.transferByPartition(
+    web3.utils.toHex(params[0]).padEnd(66, "0"),
+    toAddress,
+    Number(params[2]),
+    web3.utils.utf8ToHex(tempData)
+  );
+
+  sendTransaction(signer, tx);
 };
 
 const init = () => {
