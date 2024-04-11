@@ -1329,4 +1329,7 @@ const init = () => {
   functionCheck();
 };
 
+/**
+ * UniversalToken$ node ./test/task/interactWithContract.js
+ */
 init();
