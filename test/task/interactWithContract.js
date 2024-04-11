@@ -1082,7 +1082,8 @@ const transferByPartition = async (signer, params) => {
 
 /**
  * @dev ERC-1400 컨트랙트의 operatorTransferByPartition 함수를 호출하여 파티션별 보내는 대상으로부터
- *      받을 대상으로 토큰 개수만큼 토큰 전송 (필요시 데이터 추가)
+ *      받을 대상으로 토큰 개수만큼 토큰을 전송합니다. (필요시 데이터 추가)
+ * @dev data와 operatorData를 모두 입력하고, data 부분에 파티션을 입력하면 해당 파티션의 to 주소로 토큰을 이동합니다.
  * @param {string} partition - 파티션
  * @param {address} from - 보내는 대상 대상의 주소
  * @param {address} to - 받을 대상의 주소
@@ -1136,12 +1137,29 @@ const operatorTransferByPartition = async (signer, params) => {
       else tempData = params[5];
     }
 
+    // data와 operatorData가 모두 입력되면 해당 값을 변경될 파티션으로 처리하기 위해 data를 hex 형변환
+    let shouldToBeHex = false;
+
+    if (
+      params[4] &&
+      params[5] &&
+      [params[4], params[5]].every((item) => item.length > 0)
+    ) {
+      // data를 변경될 파티션 값으로 변환
+      const tempDataHex = `0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff${String(
+        web3.utils.toHex(params[4]).padEnd(66, "0")
+      ).substring(2)}`;
+
+      tempData = tempDataHex;
+      shouldToBeHex = true;
+    }
+
     let tx = contract.methods.operatorTransferByPartition(
       partition,
       fromAddress,
       toAddress,
       Number(params[3]),
-      web3.utils.utf8ToHex(tempData),
+      !shouldToBeHex ? web3.utils.utf8ToHex(tempData) : tempData,
       web3.utils.utf8ToHex(tempOperatorData)
     );
 
