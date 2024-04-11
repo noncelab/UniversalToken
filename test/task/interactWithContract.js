@@ -212,52 +212,52 @@ const connectArgument = (input, parameters) => {
 
     // Send functions
     case "authorizeOperator":
-      getMnemonic(parameters, authorizeOperator);
+      getMnemonicOrPrivateKey(parameters, authorizeOperator);
       break;
     case "revokeOperator":
-      getMnemonic(parameters, revokeOperator);
+      getMnemonicOrPrivateKey(parameters, revokeOperator);
       break;
     case "authorizeOperatorByPartition":
-      getMnemonic(parameters, authorizeOperatorByPartition);
+      getMnemonicOrPrivateKey(parameters, authorizeOperatorByPartition);
       break;
     case "revokeOperatorByPartition":
-      getMnemonic(parameters, revokeOperatorByPartition);
+      getMnemonicOrPrivateKey(parameters, revokeOperatorByPartition);
       break;
     case "approve":
-      getMnemonic(parameters, approve);
+      getMnemonicOrPrivateKey(parameters, approve);
       break;
     case "approveByPartition":
-      getMnemonic(parameters, approveByPartition);
+      getMnemonicOrPrivateKey(parameters, approveByPartition);
       break;
     case "transfer":
-      getMnemonic(parameters, transfer);
+      getMnemonicOrPrivateKey(parameters, transfer);
       break;
     case "transferWithData":
-      getMnemonic(parameters, transferWithData);
+      getMnemonicOrPrivateKey(parameters, transferWithData);
       break;
     case "transferFrom":
-      getMnemonic(parameters, transferFrom);
+      getMnemonicOrPrivateKey(parameters, transferFrom);
       break;
     case "transferFromWithData":
-      getMnemonic(parameters, transferFromWithData);
+      getMnemonicOrPrivateKey(parameters, transferFromWithData);
       break;
     case "transferByPartition":
-      getMnemonic(parameters, transferByPartition);
+      getMnemonicOrPrivateKey(parameters, transferByPartition);
       break;
     case "operatorTransferByPartition":
-      getMnemonic(parameters, operatorTransferByPartition);
+      getMnemonicOrPrivateKey(parameters, operatorTransferByPartition);
       break;
     case "redeem":
-      getMnemonic(parameters, redeem);
+      getMnemonicOrPrivateKey(parameters, redeem);
       break;
     case "redeemByPartition":
-      getMnemonic(parameters, redeemByPartition);
+      getMnemonicOrPrivateKey(parameters, redeemByPartition);
       break;
     case "redeemFrom":
-      getMnemonic(parameters, redeemFrom);
+      getMnemonicOrPrivateKey(parameters, redeemFrom);
       break;
     case "operatorRedeemByPartition":
-      getMnemonic(parameters, operatorRedeemByPartition);
+      getMnemonicOrPrivateKey(parameters, operatorRedeemByPartition);
       break;
   }
 };
@@ -731,28 +731,55 @@ const sendFunctionArgumentCheck = (input, params) => {
 };
 
 /**
- * @dev 컨트랙트로의 트랜잭션 전송을 위해서는 요청자의 서명이 필요합니다. 이를 위해 요청자의 니모닉을 입력 받습니다.
- * @param {string} mnemonic - 니모닉
+ * @dev 컨트랙트로의 트랜잭션 전송을 위해서는 요청자의 서명이 필요합니다. 이를 위해 요청자의 니모닉 또는 프라이빗키를 입력 받습니다.
+ * @param {string} passPhrase - 니모닉 또는 프라이빗키
  * @return {function} Callback function with signer object
  */
-const getMnemonic = (params, callback) => {
+const getMnemonicOrPrivateKey = (params, callback) => {
   readInput.question(
-    "\nPlease enter your mnemonic to process (Split by space): ",
-    (mnemonic) => {
-      let tempMnemonic = mnemonic.trim().split(" ");
+    "\nPlease enter your mnemonic or private key to sign (Split by space): ",
+    (passPhrase) => {
       let result = null;
 
-      if (tempMnemonic.length > 0 && bip39.validateMnemonic(mnemonic.trim())) {
-        const wallet = ethers.Wallet.fromPhrase(mnemonic.trim());
-        const signer = web3.eth.accounts.privateKeyToAccount(wallet.privateKey);
+      if (passPhrase.trim().startsWith("0x")) {
+        // 프라이빗키를 입력한 경우
+        let tempPrivateKey = passPhrase.trim();
+        const isValidPrivateKey =
+          tempPrivateKey.startsWith("0x") &&
+          /^([0-9a-fA-F]{64})$/.test(tempPrivateKey.substring(2));
 
-        web3.eth.accounts.wallet.add(signer);
-        callback(signer, params);
+        if (isValidPrivateKey) {
+          const signer = web3.eth.accounts.privateKeyToAccount(tempPrivateKey);
+
+          web3.eth.accounts.wallet.add(signer);
+          callback(signer, params);
+        } else {
+          console.log(
+            "Error: Invalid private key. Please check your private key again."
+          );
+          result = false;
+        }
       } else {
-        console.log(
-          "Error: Invalid mnemonic. Please check your mnemonic again."
-        );
-        result = false;
+        // 니모닉을 입력한 경우
+        let tempMnemonic = passPhrase.trim().split(" ");
+
+        if (
+          tempMnemonic.length > 0 &&
+          bip39.validateMnemonic(passPhrase.trim())
+        ) {
+          const wallet = ethers.Wallet.fromPhrase(passPhrase.trim());
+          const signer = web3.eth.accounts.privateKeyToAccount(
+            wallet.privateKey
+          );
+
+          web3.eth.accounts.wallet.add(signer);
+          callback(signer, params);
+        } else {
+          console.log(
+            "Error: Invalid mnemonic. Please check your mnemonic again."
+          );
+          result = false;
+        }
       }
 
       readInput.close();
