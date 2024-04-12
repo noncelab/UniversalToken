@@ -182,6 +182,8 @@ const manageController = async (ca, code, params) => {
     tx = contract.methods.controllers();
   } else if (code === "setControllers") {
     // controller 지정
+    // ******************** API 구현 시 주의 사항 *********************
+    // system owner 주소와 실제 owner의 주소도 operators[] 배열에 추가하여 넘겨주어야 합니다
     tx = contract.methods.setControllers(params[0]); // operators[]
   } else if (code === "controllersByPartition") {
     // 파티션별 controller 리스트 조회

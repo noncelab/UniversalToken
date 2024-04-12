@@ -82,6 +82,10 @@ const argumentCheck = async () => {
           }
         }
 
+        // ************ API 구현 시 고려 사항 *************
+        // 빈 배열의 파티션을 받은 경우, 
+        // defaultPartition으로 reserved issued locked 배열을 넣어줄 지
+        // 에러를 반환할 지 결정합니다. 
         // 파티션이 하나도 없는 경우 에러 출력
         if (JSON.stringify(partitions) === "[]") {
           console.log("Error: At least one partition is required");
