@@ -14,7 +14,7 @@ const callFunctions = [
   "balanceOf",
   "balanceOfByPartition",
   "allowance",
-  "allowanceByPartition", 
+  "allowanceByPartition",
   "isIssuable",
   "isControllable",
 ];
@@ -52,4 +52,31 @@ const sendFunctions = [
   "operatorRedeemByPartition",
 ];
 
-module.exports = { callFunctions, sendFunctions, callFunctionsForStepPass };
+/**
+ * @dev 이벤트가 포함되어 있는 함수들 정의
+ */
+const eventFunctions = [
+  "addMinter",
+  "removeMinter",
+  "approve",
+  "setDocument",
+  "removeDocument",
+  "authorizeOperator",
+  "revokeOperator",
+  "authorizeOperatorByPartition",
+  "revokeOperatorByPartition",
+  "approveByPartition",
+  "transfer",
+  "transferByPartition",
+  "issue",
+  "issueByPartition",
+  "redeem",
+  "redeemByPartition",
+];
+
+module.exports = {
+  callFunctions,
+  sendFunctions,
+  callFunctionsForStepPass,
+  eventFunctions,
+};
